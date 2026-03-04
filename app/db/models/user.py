@@ -16,4 +16,4 @@ class User(Base, TimestampMixin):
 
     name: Mapped[str] = mapped_column(String(120), nullable=False)
 
-    token = relationship("AnilistToken", back_populates="user", uselist=False)
+    tokens = relationship("AnilistToken", back_populates="user", uselist=False)

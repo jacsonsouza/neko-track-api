@@ -35,7 +35,9 @@ def validate_state(state: str) -> bool:
     except ValueError:
         return False
 
-    expected_sig = hmac.new(_STATE_SECRET, payload_b64.encode(), hashlib.sha256).digest
+    expected_sig = hmac.new(
+        _STATE_SECRET, payload_b64.encode(), hashlib.sha256
+    ).digest()
     expected_sig_b64 = _b64url(expected_sig)
 
     if not hmac.compare_digest(expected_sig_b64, sig_b64):

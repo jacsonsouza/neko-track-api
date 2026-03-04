@@ -6,11 +6,17 @@ from app.main import app
 from app.modules.auth.anilist_client import ANILIST_GRAPHQL_URL, ANILIST_OAUTH_TOKEN_URL
 
 
-def test_start_redirects_to_anilist():
-    client = TestClient(app)
+def test_start_redirects_to_anilist(client):
     r = client.get("/auth/anilist/start", follow_redirects=False)
     assert r.status_code == 302
     assert "anilist.co/api/v2/oauth/authorize" in r.headers["location"]
+
+
+def test_callback_rejects_invalid_state(client):
+    r = client.get(
+        "/auth/anilist/callback?code=abc&state=invalid", follow_redirects=False
+    )
+    assert r.status_code == 400
 
 
 @respx.mock

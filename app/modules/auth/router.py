@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 from pytest import Session
 
-from app.core.auth_dep import AuthClaims, claims
+from app.core.auth_dep import AuthClaims, get_claims
 from app.core.config import settings
 from app.core.oauth_state import create_state
 from app.db.session import get_db
 from app.modules.auth.service import login_with_anilist_callback
-from app.modules.auth.token_repo import get_by_user_id
+from app.modules.users.repo import get_by_id as get_by_user_id
 
 router = APIRouter(prefix="/auth/anilist", tags=["auth"])
 
@@ -29,7 +29,7 @@ def start():
 
 @router.get("/callback")
 async def callback(code: str, state: str, db: Session = Depends(get_db)):
-    result = await login_with_anilist_callback(db, code, state)
+    result = await login_with_anilist_callback(db, code=code, state=state)
 
     return RedirectResponse(
         url=f"{settings.mobile_deeplink}?token={result.app_jwt}",
@@ -38,7 +38,7 @@ async def callback(code: str, state: str, db: Session = Depends(get_db)):
 
 
 @router.get("/me")
-def me(claims: AuthClaims = Depends(claims), db: Session = Depends(get_db)):
+def me(claims: AuthClaims = Depends(get_claims), db: Session = Depends(get_db)):
     user = get_by_user_id(db, claims.user_id)
 
     if not user:

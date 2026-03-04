@@ -25,7 +25,7 @@ async def login_with_anilist_callback(
     if not validate_state(state):
         raise HTTPException(400, "Invalid or expired state")
 
-    async with httpx.AsyncClient as http:
+    async with httpx.AsyncClient(timeout=15) as http:
         client = AnilistClient(http)
         access_token = await client.exchange_code_for_token(code)
         viewer = await client.viewer(access_token)
