@@ -27,7 +27,7 @@ jobs:
 
     env:
       APP_BASE_URL: http://localhost:8000
-      MOBILE_DEEPLINK: myapp://auth
+      MOBILE_DEEPLINK: nekotrack://auth
 
       ANILIST_CLIENT_ID: dummy
       ANILIST_CLIENT_SECRET: dummy
