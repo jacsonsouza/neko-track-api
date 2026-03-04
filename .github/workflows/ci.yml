@@ -23,20 +23,20 @@ jobs:
           --health-cmd "pg_isready -U neko -d neko_test"
           --health-interval 5s
           --health-timeout 3s
-          --health-retries 5
+          --health-retries 10
 
     env:
       APP_BASE_URL: http://localhost:8000
       MOBILE_DEEPLINK: myapp://auth
 
       ANILIST_CLIENT_ID: dummy
-      ANILIST_CLIENT_SECRETE: dummy
+      ANILIST_CLIENT_SECRET: dummy
 
       DATABASE_URL_DIRECT: postgresql+psycopg://neko:neko@localhost:5432/neko_test
       DATABASE_URL_POOLED: postgresql+psycopg://neko:neko@localhost:5432/neko_test
 
       JWT_SECRET: jwt_secret_for_tests_only
-      TOKEN_ENC_KEY: $ {{ secrets.TOKEN_ENC_KEY }}
+      TOKEN_ENC_KEY: ${{ secrets.TOKEN_ENC_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -53,4 +53,4 @@ jobs:
         run: alembic upgrade head
 
       - name: Run tests
-        run: pytests -q
+        run: pytest -q
