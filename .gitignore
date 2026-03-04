@@ -1,6 +1,12 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.pyc
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
 
 # env
 .env
@@ -14,3 +20,8 @@ env/
 .vscode/
 .idea/
 .DS_Store
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
