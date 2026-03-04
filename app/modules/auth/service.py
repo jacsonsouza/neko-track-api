@@ -1,36 +1,46 @@
-from os import name
+from dataclasses import dataclass
 
 import httpx
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
 
-from app.core.security import consume_state, create_app_jwt
+from app.core.crypto import encrypt_token
+from app.core.oauth_state import validate_state
+from app.core.security import create_app_jwt
+from app.modules.auth import token_repo
 from app.modules.auth.anilist_client import AnilistClient
-
-_USERS: dict[int, dict] = {}
-_NEXT_ID = 1
+from app.modules.users import repo
 
 
-def _upsert_user(anilist_id: int, name: str) -> int:
-    global _NEXT_ID
-    for uid, u in _USERS.items():
-        if u["anilist_id"] == anilist_id:
-            u["name"] = name
-            return uid
-    uid = _NEXT_ID
-    _NEXT_ID += 1
-    _USERS[uid] = {"anilist_id": anilist_id, "name": name}
-    return uid
+@dataclass(frozen=True)
+class LoginResult:
+    app_jwt: str
+    user_id: int
+    anilist_id: int
 
 
-async def handle_anilist_callback(code: str, state: str) -> str:
-    if not consume_state(state):
-        raise HTTPException(status_code=400, detail="Invalid or expired state")
+async def login_with_anilist_callback(
+    db: Session, *, code: str, state: str
+) -> LoginResult:
+    if not validate_state(state):
+        raise HTTPException(400, "Invalid or expired state")
 
-    async with httpx.AsyncClient() as http:
+    async with httpx.AsyncClient as http:
         client = AnilistClient(http)
-        token = await client.exchange_code_for_token(code)
-        viewer = await client.viewer(token)
+        access_token = await client.exchange_code_for_token(code)
+        viewer = await client.viewer(access_token)
 
-    user_id = _upsert_user(anilist_id=int(viewer["id"]), name=str(viewer["name"]))
-    app_jwt = create_app_jwt(user_id=user_id, anilist_id=int(viewer["id"]))
-    return app_jwt
+        anilist_id = int(viewer["id"])
+        name = str(viewer["name"])
+
+        user = repo.upsert_by_anilist_id(db, anilist_id, name)
+
+        encrypted = encrypt_token(access_token)
+
+        token_repo.upsert_access_token_encrypted(db, user.id, encrypted)
+
+        db.commit()
+
+        token = create_app_jwt(user.id, anilist_id)
+
+        return LoginResult(token, user.id, anilist_id)
