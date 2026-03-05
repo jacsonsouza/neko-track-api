@@ -23,7 +23,9 @@ async def viewer(db: Session, *, user_id: int) -> dict:
 
 async def get_profile(http: httpx.AsyncClient, access_token: str) -> UserProfileDTO:
     client = AnilistClient(http)
-    data = await client.graphql(access_token=access_token, query=VIEWER_PROFILE)
+    data = await client.graphql(
+        access_token=access_token, query=VIEWER_PROFILE, variables={}
+    )
 
     v = data["data"]["Viewer"]
     avatar = v.get("avatar")
