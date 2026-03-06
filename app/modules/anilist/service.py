@@ -28,19 +28,5 @@ async def get_profile(http: httpx.AsyncClient, access_token: str) -> UserProfile
     )
 
     v = data["data"]["Viewer"]
-    avatar = v.get("avatar")
-    statistics = v.get("statistics").get("anime")
 
-    return UserProfileDTO(
-        id=int(v["id"]),
-        name=str(v["name"]),
-        about=v.get("about"),
-        banner_image=v.get("bannerImage"),
-        avatar=AvatarDTO(large=avatar.get("large"), medium=avatar.get("medium")),
-        anime_statistics=AnimeStatisticsDTO(
-            count=statistics.get("count"),
-            episodes_watched=statistics.get("episodesWatched"),
-            mean_score=statistics.get("meanScore"),
-            standard_deviation=statistics.get("standardDeviation"),
-        ),
-    )
+    return UserProfileDTO.from_json(v)

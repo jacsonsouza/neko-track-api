@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 from sqlalchemy import text
 
 from app.db.session import SessionLocal
@@ -24,3 +26,11 @@ def health():
             db.close()
         except Exception:
             pass
+
+
+@app.exception_handler(ValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=502,
+        content={"detail": "Invalid AniList response"},
+    )
