@@ -3,10 +3,16 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.crypto import decrypt_token
-from app.modules.anilist.dto import AnimeStatisticsDTO, AvatarDTO, UserProfileDTO
-from app.modules.anilist.queries import VIEWER_PROFILE
+from app.modules.anilist.dto.paginated_activities_dto import (
+    PageDTO,
+    UserActivitiesDataDTO,
+)
+from app.modules.anilist.dto.user_profile_dto import UserProfileDTO
+from app.modules.anilist.queries.activities import USER_ACTIVITIES
+from app.modules.anilist.queries.viewer import VIEWER_PROFILE
 from app.modules.auth.anilist_client import AnilistClient
 from app.modules.auth.token_repo import get_by_user_id
+from app.modules.users.repo import get_by_id
 
 
 async def viewer(db: Session, *, user_id: int) -> dict:
@@ -30,3 +36,26 @@ async def get_profile(http: httpx.AsyncClient, access_token: str) -> UserProfile
     v = data["data"]["Viewer"]
 
     return UserProfileDTO.from_json(v)
+
+
+async def get_user_activities(
+    db: Session,
+    http: httpx.AsyncClient,
+    access_token: str,
+    user_id: int,
+    page: int = 1,
+    per_page: int = 10,
+) -> UserActivitiesDataDTO:
+    client = AnilistClient(http)
+
+    data = await client.graphql(
+        access_token=access_token,
+        query=USER_ACTIVITIES,
+        variables={
+            "userId": user_id,
+            "page": page,
+            "perPage": per_page,
+        },
+    )
+
+    return UserActivitiesDataDTO.from_json(data["data"])

@@ -1,0 +1,98 @@
+{
+    "data": {
+        "Page": {
+            "pageInfo": {
+            "perPage": 10,
+            "currentPage": 1,
+            "hasNextPage": true
+            },
+            "activities": [
+            {
+                "id": 1,
+                "__typename": "ListActivity",
+                "userId": 42,
+                "createdAt": 1700000000,
+                "progress": "Watched episode 3",
+                "status": "watched episode",
+                "type": "ANIME_LIST",
+                "replyCount": 2,
+                "likeCount": 5,
+                "isLiked": false,
+                "isPinned": false,
+                "media": {
+                "id": 101,
+                "title": {
+                    "romaji": "Test Anime",
+                    "userPreferred": "Test Anime Preferred"
+                },
+                "coverImage": {
+                    "medium": "medium-image",
+                    "large": "large-image"
+                },
+                "episodes": 12,
+                "chapters": null,
+                "format": "TV",
+                "status": "FINISHED",
+                "averageScore": 80
+                },
+                "user": {
+                "id": 42,
+                "name": "test_user",
+                "avatar": {
+                    "medium": "medium-avatar",
+                    "large": "large-avatar"
+                }
+                }
+            },
+            {
+                "id": 2,
+                "__typename": "TextActivity",
+                "userId": 42,
+                "createdAt": 1700001000,
+                "text": "<p>This is a test activity</p>",
+                "replyCount": 1,
+                "likeCount": 3,
+                "isLiked": true,
+                "isSubscribed": false,
+                "isLocked": false,
+                "isPinned": false,
+                "user": {
+                "id": 42,
+                "name": "test_user",
+                "avatar": {
+                    "medium": "medium-avatar",
+                    "large": "large-avatar"
+                }
+                }
+            },
+            {
+                "id": 3,
+                "__typename": "MessageActivity",
+                "createdAt": 1700002000,
+                "message": "Hello from test",
+                "replyCount": 0,
+                "likeCount": 1,
+                "isLiked": false,
+                "isSubscribed": true,
+                "isLocked": false,
+                "messenger": {
+                "id": 50,
+                "name": "sender_user",
+                "avatar": {
+                    "medium": "medium-avatar",
+                    "large": "large-avatar"
+                }
+                },
+                "recipient": {
+                "id": 42,
+                "name": "test_user",
+                "avatar": {
+                    "medium": "medium-avatar",
+                    "large": "large-avatar"
+                }
+                }
+            }
+            ]
+        }
+    }
+}

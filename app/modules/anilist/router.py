@@ -1,11 +1,15 @@
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.auth_dep import AuthClaims, get_claims
 from app.db.session import get_db
-from app.modules.anilist.dto import UserProfileDTO
-from app.modules.anilist.service import get_profile, viewer
+from app.modules.anilist.dto.paginated_activities_dto import (
+    PageDTO,
+    UserActivitiesDataDTO,
+)
+from app.modules.anilist.dto.user_profile_dto import UserProfileDTO
+from app.modules.anilist.service import get_profile, get_user_activities, viewer
 from app.modules.auth.token_repo import get_anilist_access_token_for_user
 
 router = APIRouter(prefix="/anilist", tags=["anilist"])
@@ -26,3 +30,18 @@ async def profile(
 
     async with httpx.AsyncClient(timeout=15) as http:
         return await get_profile(http, access_token)
+
+
+@router.get("/user/activities", response_model=UserActivitiesDataDTO)
+async def user_activities(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=50),
+    claims: AuthClaims = Depends(get_claims),
+    db=Depends(get_db),
+) -> UserActivitiesDataDTO:
+    access_token = get_anilist_access_token_for_user(db, claims.user_id)
+
+    async with httpx.AsyncClient(timeout=15) as http:
+        return await get_user_activities(
+            db, http, access_token, claims.anilist_id, page, per_page
+        )
