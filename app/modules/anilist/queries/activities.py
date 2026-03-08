@@ -98,3 +98,25 @@ query ($userId: Int!, $page: Int, $perPage: Int) {
     }
 }
 """
+
+TOGGLE_LIKE = """
+    mutation ($id: Int) {
+        ToggleLikeV2 (id: $id, type: $type) {
+            ... on ListActivity {
+                id
+                likeCount
+                isLiked
+            }
+            ... on TextActivity {
+                id
+                likeCount
+                isLiked
+            }
+            ... on MessageActivity {
+                id
+                likeCount
+                isLiked
+            }
+        }
+    }
+"""

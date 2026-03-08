@@ -4,11 +4,12 @@ from sqlalchemy.orm import Session
 
 from app.core.crypto import decrypt_token
 from app.modules.anilist.dto.paginated_activities_dto import (
+    ActivityDTO,
     PageDTO,
     UserActivitiesDataDTO,
 )
 from app.modules.anilist.dto.user_profile_dto import UserProfileDTO
-from app.modules.anilist.queries.activities import USER_ACTIVITIES
+from app.modules.anilist.queries.activities import TOGGLE_LIKE, USER_ACTIVITIES
 from app.modules.anilist.queries.viewer import VIEWER_PROFILE
 from app.modules.auth.anilist_client import AnilistClient
 from app.modules.auth.token_repo import get_by_user_id
@@ -39,7 +40,6 @@ async def get_profile(http: httpx.AsyncClient, access_token: str) -> UserProfile
 
 
 async def get_user_activities(
-    db: Session,
     http: httpx.AsyncClient,
     access_token: str,
     user_id: int,
@@ -59,3 +59,15 @@ async def get_user_activities(
     )
 
     return UserActivitiesDataDTO.from_json(data["data"])
+
+
+async def toggle_activity_like(
+    http: httpx.AsyncClient, access_token: str, activity_id: int, type: str
+):
+    client = AnilistClient(http)
+
+    return await client.graphql(
+        access_token=access_token,
+        query=TOGGLE_LIKE,
+        variables={"id": activity_id, "type": type},
+    )
