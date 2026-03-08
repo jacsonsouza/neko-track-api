@@ -48,7 +48,7 @@ async def user_activities(
 
     async with httpx.AsyncClient(timeout=15) as http:
         return await get_user_activities(
-            db, http, access_token, claims.anilist_id, page, per_page
+            http, access_token, claims.anilist_id, page, per_page
         )
 
 
