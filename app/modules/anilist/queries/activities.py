@@ -100,7 +100,7 @@ query ($userId: Int!, $page: Int, $perPage: Int) {
 """
 
 TOGGLE_LIKE = """
-    mutation ($id: Int) {
+    mutation ($id: Int, $type: LikeableType) {
         ToggleLikeV2 (id: $id, type: $type) {
             ... on ListActivity {
                 id
