@@ -95,7 +95,7 @@ async def delete_reply(
     access_token = get_anilist_access_token_for_user(db, claims.user_id)
 
     async with httpx.AsyncClient(timeout=15) as http:
-        return remove_reply(http, access_token, reply_id)
+        return await remove_reply(http, access_token, reply_id)
 
 
 @router.post("/replies/{reply_id}/toggle-like")
