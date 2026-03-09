@@ -7,7 +7,7 @@ import respx
 
 from app.core.crypto import encrypt_token
 from app.core.security import create_app_jwt
-from app.modules.auth.anilist_client import ANILIST_GRAPHQL_URL
+from app.modules.anilist.client import ANILIST_GRAPHQL_URL
 from tests.factories.anilist_token_factory import AnilistTokenFactory
 
 
@@ -53,8 +53,6 @@ def test_should_get_user_activities(client, auth_headers, anilist_activities_pay
     )
 
     data = response.json()
-
-    print(data)
 
     assert response.status_code == 200
     assert data["Page"]["pageInfo"]["currentPage"] == 1

@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 from app.core.crypto import encrypt_token
 from app.core.oauth_state import validate_state
 from app.core.security import create_app_jwt
+from app.modules.anilist.client import AnilistClient
 from app.modules.auth import token_repo
-from app.modules.auth.anilist_client import AnilistClient
 from app.modules.users import repo
 
 

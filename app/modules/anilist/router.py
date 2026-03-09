@@ -5,10 +5,8 @@ from sqlalchemy.orm import Session
 from app.core.auth_dep import AuthClaims, get_claims
 from app.db.session import get_db
 from app.modules.anilist.dto.paginated_activities_dto import UserActivitiesDataDTO
-from app.modules.anilist.dto.user_profile_dto import UserProfileDTO
 from app.modules.anilist.service import (
     get_activity_replies,
-    get_profile,
     get_user_activities,
     post_reply,
     remove_reply,
@@ -25,16 +23,6 @@ async def get_viewer(
     claims: AuthClaims = Depends(get_claims), db: Session = Depends(get_db)
 ):
     return await viewer(db, user_id=claims.user_id)
-
-
-@router.get("/profile", response_model=UserProfileDTO)
-async def profile(
-    claims: AuthClaims = Depends(get_claims), db=Depends(get_db)
-) -> UserProfileDTO:
-    access_token = get_anilist_access_token_for_user(db, claims.user_id)
-
-    async with httpx.AsyncClient(timeout=15) as http:
-        return await get_profile(http, access_token)
 
 
 @router.get("/user/activities", response_model=UserActivitiesDataDTO)
