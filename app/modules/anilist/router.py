@@ -98,7 +98,7 @@ async def delete_reply(
         return remove_reply(http, access_token, reply_id)
 
 
-@router.post("/activities/{reply_id}/toggle-like")
+@router.post("/replies/{reply_id}/toggle-like")
 async def toggle_reply_like(
     reply_id: int,
     type: str,
