@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from pydantic import ValidationError
 from sqlalchemy import text
 
 from app.db.session import SessionLocal
+from app.modules.anilist.activities.router import router as activities_router
 from app.modules.anilist.profile.router import router as profile_router
 from app.modules.anilist.router import router as anilist_router
 from app.modules.auth.router import router as auth_router
@@ -12,6 +14,7 @@ app = FastAPI(title="Neko Track Backend")
 
 app.include_router(auth_router)
 app.include_router(profile_router)
+app.include_router(activities_router)
 app.include_router(anilist_router)
 
 
@@ -36,3 +39,10 @@ async def validation_exception_handler(request, exc):
         status_code=502,
         content={"detail": "Invalid AniList response"},
     )
+
+
+@app.get("/routes")
+def listar_todas_as_rotas():
+    return [
+        {"path": r.path, "name": r.name} for r in app.routes if isinstance(r, APIRoute)
+    ]
