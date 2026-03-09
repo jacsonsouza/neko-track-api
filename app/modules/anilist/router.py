@@ -4,14 +4,14 @@ from sqlalchemy.orm import Session
 
 from app.core.auth_dep import AuthClaims, get_claims
 from app.db.session import get_db
-from app.modules.anilist.dto.paginated_activities_dto import (
-    PageDTO,
-    UserActivitiesDataDTO,
-)
+from app.modules.anilist.dto.paginated_activities_dto import UserActivitiesDataDTO
 from app.modules.anilist.dto.user_profile_dto import UserProfileDTO
 from app.modules.anilist.service import (
+    get_activity_replies,
     get_profile,
     get_user_activities,
+    post_reply,
+    remove_reply,
     toggle_activity_like,
     viewer,
 )
@@ -63,3 +63,36 @@ async def toggle_like(
 
     async with httpx.AsyncClient(timeout=15) as http:
         return await toggle_activity_like(http, access_token, activity_id, type)
+
+
+@router.get("/activities/{activity_id}/replies")
+async def replies(
+    activity_id: int, claims: AuthClaims = Depends(get_claims), db=Depends(get_db)
+):
+    access_token = get_anilist_access_token_for_user(db, claims.user_id)
+
+    async with httpx.AsyncClient(timeout=15) as http:
+        return await get_activity_replies(http, access_token, activity_id)
+
+
+@router.post("/activities/{activity_id}/reply")
+async def reply(
+    activity_id: int,
+    text: str,
+    claims: AuthClaims = Depends(get_claims),
+    db=Depends(get_db),
+):
+    access_token = get_anilist_access_token_for_user(db, claims.user_id)
+
+    async with httpx.AsyncClient(timeout=15) as http:
+        return await post_reply(http, access_token, activity_id, text)
+
+
+@router.delete("/activities/reply/{reply_id}")
+async def delete_reply(
+    reply_id: int, claims: AuthClaims = Depends(get_claims), db=Depends(get_db)
+):
+    access_token = get_anilist_access_token_for_user(db, claims.user_id)
+
+    async with httpx.AsyncClient(timeout=15) as http:
+        return remove_reply(http, access_token, reply_id)

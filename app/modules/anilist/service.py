@@ -9,7 +9,13 @@ from app.modules.anilist.dto.paginated_activities_dto import (
     UserActivitiesDataDTO,
 )
 from app.modules.anilist.dto.user_profile_dto import UserProfileDTO
-from app.modules.anilist.queries.activities import TOGGLE_LIKE, USER_ACTIVITIES
+from app.modules.anilist.queries.activities import (
+    DELETE_REPLY,
+    POST_REPLY,
+    REPLIES,
+    TOGGLE_LIKE,
+    USER_ACTIVITIES,
+)
 from app.modules.anilist.queries.viewer import VIEWER_PROFILE
 from app.modules.auth.anilist_client import AnilistClient
 from app.modules.auth.token_repo import get_by_user_id
@@ -70,4 +76,36 @@ async def toggle_activity_like(
         access_token=access_token,
         query=TOGGLE_LIKE,
         variables={"id": activity_id, "type": type},
+    )
+
+
+async def get_activity_replies(
+    http: httpx.AsyncClient, access_token: str, activity_id: int
+):
+    client = AnilistClient(http)
+
+    return await client.graphql(
+        access_token=access_token,
+        query=REPLIES,
+        variables={"activityId": activity_id},
+    )
+
+
+async def post_reply(
+    http: httpx.AsyncClient, access_token: str, activity_id: int, text: str
+):
+    client = AnilistClient(http)
+
+    return await client.graphql(
+        access_token=access_token,
+        query=POST_REPLY,
+        variables={"activityId": activity_id, "text": text},
+    )
+
+
+async def remove_reply(http: httpx.AsyncClient, access_token: str, reply_id: int):
+    client = AnilistClient(http)
+
+    return await client.graphql(
+        access_token=access_token, query=DELETE_REPLY, variables={"id": reply_id}
     )
