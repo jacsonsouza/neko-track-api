@@ -88,7 +88,7 @@ async def reply(
         return await post_reply(http, access_token, activity_id, text)
 
 
-@router.delete("/reply/{reply_id}")
+@router.delete("/replies/{reply_id}")
 async def delete_reply(
     reply_id: int, claims: AuthClaims = Depends(get_claims), db=Depends(get_db)
 ):
