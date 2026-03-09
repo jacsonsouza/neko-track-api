@@ -75,7 +75,7 @@ async def replies(
         return await get_activity_replies(http, access_token, activity_id)
 
 
-@router.post("/activities/{activity_id}/reply")
+@router.post("/activities/{activity_id}/replies")
 async def reply(
     activity_id: int,
     text: str,
@@ -88,7 +88,7 @@ async def reply(
         return await post_reply(http, access_token, activity_id, text)
 
 
-@router.delete("/activities/reply/{reply_id}")
+@router.delete("/reply/{reply_id}")
 async def delete_reply(
     reply_id: int, claims: AuthClaims = Depends(get_claims), db=Depends(get_db)
 ):
@@ -96,3 +96,16 @@ async def delete_reply(
 
     async with httpx.AsyncClient(timeout=15) as http:
         return remove_reply(http, access_token, reply_id)
+
+
+@router.post("/activities/{reply_id}/toggle-like")
+async def toggle_reply_like(
+    reply_id: int,
+    type: str,
+    claims: AuthClaims = Depends(get_claims),
+    db=Depends(get_db),
+):
+    access_token = get_anilist_access_token_for_user(db, claims.user_id)
+
+    async with httpx.AsyncClient(timeout=15) as http:
+        return await toggle_activity_like(http, access_token, reply_id, type)
