@@ -21,6 +21,6 @@ async def watch_lists(
     access_token = get_anilist_access_token_for_user(db, user_id)
 
     async with httpx.AsyncClient(timeout=15) as http:
-        return get_user_anime_lists(
+        return await get_user_anime_lists(
             http, access_token, claims.anilist_id, status, page, per_page
         )
