@@ -14,5 +14,5 @@ async def get_anime_details(
     return await client.graphql(
         access_token=access_token,
         query=ANIME_DETAILS,
-        variables={"animeId": anime_id},
+        variables={"id": anime_id},
     )
