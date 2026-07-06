@@ -3,12 +3,15 @@ import os
 import pytest
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
+from pytest_factoryboy import register
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from tests.factories.anilist_token_factory import AnilistTokenFactory
+from tests.factories.user_factory import UserFactory
 
 load_dotenv()
 
@@ -46,3 +49,16 @@ def client(db_session):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def setup_factory_session(db_session):
+    factories = [UserFactory, AnilistTokenFactory]
+
+    for factory in factories:
+        factory._meta.sqlalchemy_session = db_session
+
+    yield
+
+    for factory in factories:
+        factory._meta.sqlalchemy_session = None

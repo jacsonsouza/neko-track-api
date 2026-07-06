@@ -1,7 +1,7 @@
 import httpx
 import respx
 
-from app.modules.auth.anilist_client import ANILIST_GRAPHQL_URL, ANILIST_OAUTH_TOKEN_URL
+from app.modules.anilist.client import ANILIST_GRAPHQL_URL, ANILIST_OAUTH_TOKEN_URL
 
 
 @respx.mock
