@@ -40,6 +40,9 @@ class AnilistClient:
         Viewer {
             id
             name
+            mediaListOptions {
+                scoreFormat
+            }
         }
         }
         """

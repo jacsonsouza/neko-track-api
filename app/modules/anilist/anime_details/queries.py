@@ -1,10 +1,5 @@
 ANIME_DETAILS = """
 query ($id: Int) {
-  Viewer {
-    mediaListOptions {
-      scoreFormat
-    }
-  }
   Media (id: $id, type: ANIME) {
     id
     title {
