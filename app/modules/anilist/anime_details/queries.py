@@ -1,6 +1,11 @@
 ANIME_DETAILS = """
 query ($id: Int) {
   Media (id: $id, type: ANIME) {
+    user {
+      mediaListOptions {
+        scoreFormat
+      }
+    }
     id
     title {
       romaji
@@ -28,6 +33,7 @@ query ($id: Int) {
     seasonYear
     averageScore
     genres
+    isFavorite
     studios(isMain: true) {
       nodes {
         id
@@ -35,6 +41,36 @@ query ($id: Int) {
       }
     }
     characters(sort: [ROLE, RELEVANCE, ID], perPage: 6) {
+      edges {
+        role
+        node {
+          id
+          name {
+            full
+          }
+          image {
+            large
+          }
+        }
+      }
+    }
+    relations {
+      edges {
+        relationType
+        node {
+          id
+          title {
+            romaji
+            english
+            native
+          }
+          coverImage {
+            extraLarge
+          }
+        }
+      }
+    }
+    staff(sort: [RELEVANCE, ID], perPage: 6) {
       edges {
         role
         node {
