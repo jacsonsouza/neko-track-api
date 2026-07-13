@@ -1,11 +1,11 @@
 ANIME_DETAILS = """
 query ($id: Int) {
-  Media (id: $id, type: ANIME) {
-    user {
-      mediaListOptions {
-        scoreFormat
-      }
+  Viewer {
+    mediaListOptions {
+      scoreFormat
     }
+  }
+  Media (id: $id, type: ANIME) {
     id
     title {
       romaji
