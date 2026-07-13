@@ -33,7 +33,7 @@ query ($id: Int) {
     seasonYear
     averageScore
     genres
-    isFavorite
+    isFavourite
     studios(isMain: true) {
       nodes {
         id
