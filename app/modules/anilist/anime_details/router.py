@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends
 import httpx
+from fastapi import APIRouter, Depends
 
 from app.core.auth_dep import AuthClaims, get_claims
 from app.db.session import get_db
-from app.modules.anilist.anime_details.service import get_anime_details
+from app.modules.anilist.anime_details.dto.anime_progress_dto import AnimeProgressDTO
+from app.modules.anilist.anime_details.service import get_anime_details, update_progress
 from app.modules.auth.token_repo import get_anilist_access_token_for_user
 
 router = APIRouter(prefix="/anilist/animes", tags=["anilist", "details"])
@@ -19,3 +20,16 @@ async def anime_details(
 
     async with httpx.AsyncClient(timeout=15) as http:
         return await get_anime_details(http, access_token, anime_id)
+
+
+@router.patch("/{anime_id}")
+async def anime_progress(
+    anime_id: int,
+    data: AnimeProgressDTO,
+    claims: AuthClaims = Depends(get_claims),
+    db=Depends(get_db),
+):
+    access_token = get_anilist_access_token_for_user(db, claims.user_id)
+
+    async with httpx.AsyncClient(timeout=15) as http:
+        return await update_progress(http, access_token, anime_id, data)

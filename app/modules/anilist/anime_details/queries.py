@@ -82,3 +82,39 @@ query ($id: Int) {
   }
 }
 """
+
+SAVE_ANIME_PROGRESS = """
+mutation (
+  $mediaId: Int
+  $status: MediaListStatus
+  $scoreRaw: Int
+  $progress: Int
+  $startedAt: FuzzyDateInput
+  $completedAt: FuzzyDateInput
+) {
+  SaveMediaListEntry (
+    mediaId: $mediaId
+    status: $status
+    scoreRaw: $scoreRaw
+    progress: $progress
+    startedAt: $startedAt
+    completedAt: $completedAt
+  ) {
+    id
+    mediaId
+    status
+    scoreRaw
+    progress
+    startedAt {
+      year
+      month
+      day
+    }
+    completedAt {
+      year
+      month
+      day
+    }
+  }
+}
+"""
