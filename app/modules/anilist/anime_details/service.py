@@ -36,7 +36,7 @@ async def update_progress(
         variables={
             "mediaId": anime_id,
             "status": data.status,
-            "scoreRaw": data.score_raw,
+            "score": data.score,
             "progress": data.progress,
             "startedAt": FuzzyDateDTO.from_date(data.started_at),
             "completedAt": FuzzyDateDTO.from_date(data.completed_at),
