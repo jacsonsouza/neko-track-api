@@ -87,7 +87,7 @@ SAVE_ANIME_PROGRESS = """
 mutation (
   $mediaId: Int
   $status: MediaListStatus
-  $scoreRaw: Int
+  $score: Float
   $progress: Int
   $startedAt: FuzzyDateInput
   $completedAt: FuzzyDateInput
@@ -95,7 +95,7 @@ mutation (
   SaveMediaListEntry (
     mediaId: $mediaId
     status: $status
-    scoreRaw: $scoreRaw
+    score: $score
     progress: $progress
     startedAt: $startedAt
     completedAt: $completedAt
@@ -103,7 +103,7 @@ mutation (
     id
     mediaId
     status
-    scoreRaw
+    score
     progress
     startedAt {
       year

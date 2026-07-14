@@ -19,7 +19,7 @@ class FuzzyDateDTO(BaseModel):
 class AnimeProgressDTO(BaseModel):
     media_id: int = Field(..., alias="mediaId")
     status: Optional[str] = None
-    score_raw: Optional[int] = Field(None, alias="scoreRaw")
+    score: Optional[float]
     progress: Optional[int] = None
     started_at: Optional[date] = Field(None, alias="startedAt")
     completed_at: Optional[date] = Field(None, alias="completedAt")
