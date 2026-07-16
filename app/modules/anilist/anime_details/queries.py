@@ -15,7 +15,7 @@ query ($id: Int) {
     mediaListEntry {
       id
       status
-      score (format: POINT_10)
+      score
       progress
       repeat
       private
