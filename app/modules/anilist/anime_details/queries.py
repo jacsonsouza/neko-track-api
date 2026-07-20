@@ -19,6 +19,16 @@ query ($id: Int) {
       progress
       repeat
       private
+      startedAt {
+        year
+        month
+        day
+      }
+      completedAt {
+        year
+        month
+        day
+      }
     }
     description
     status

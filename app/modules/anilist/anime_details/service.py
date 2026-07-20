@@ -4,6 +4,7 @@ from app.modules.anilist.anime_details.dto.anime_progress_dto import (
     AnimeProgressDTO,
     FuzzyDateDTO,
 )
+from app.modules.anilist.anime_details.dto.anime_resource import AnimeResource
 from app.modules.anilist.anime_details.queries import (
     ANIME_DETAILS,
     SAVE_ANIME_PROGRESS,
@@ -15,14 +16,16 @@ async def get_anime_details(
     http: httpx.AsyncClient,
     access_token: str,
     anime_id: int,
-):
+) -> AnimeResource:
     client = AnilistClient(http)
 
-    return await client.graphql(
+    json = await client.graphql(
         access_token=access_token,
         query=ANIME_DETAILS,
         variables={"id": anime_id},
     )
+
+    return AnimeResource.model_validate(json).media
 
 
 async def update_progress(
