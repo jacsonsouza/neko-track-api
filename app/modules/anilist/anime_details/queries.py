@@ -6,8 +6,8 @@ query ($id: Int) {
       romaji
       english
       native
+      userPreferred
     }
-    bannerImage
     coverImage {
       extraLarge
       color
