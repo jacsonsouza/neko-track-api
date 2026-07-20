@@ -1,3 +1,4 @@
+from datetime import date
 from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
@@ -28,8 +29,25 @@ class MediaListEntryDTO(BaseModel):
     progress: Optional[int] = None
     repeat: Optional[int] = None
     private: Optional[bool] = None
-    started_at: Optional[FuzzyDateDTO] = Field(None, alias="startedAt")
-    completed_at: Optional[FuzzyDateDTO] = Field(None, alias="completedAt")
+    started_at: Optional[str] = Field(None, alias="startedAt")
+    completed_at: Optional[str] = Field(None, alias="completedAt")
+
+    @field_validator("started_at", "completed_at", mode="before")
+    @classmethod
+    def transform_fuzzy_date(cls, value) -> Optional[str]:
+        if not value or not isinstance(value, dict):
+            return None
+
+        year = value.get("year")
+        month = value.get("month") or 1
+        day = value.get("day") or 1
+
+        if not year:
+            return None
+        try:
+            return date(year, month, day).isoformat()
+        except ValueError:
+            return None
 
 
 class StudioNode(BaseModel):
@@ -43,8 +61,8 @@ class StudiosDTO(BaseModel):
 
 class CharacterNode(BaseModel):
     id: int
-    name: dict  # Contém {"full": "..."}
-    image: dict  # Contém {"large": "..."}
+    name: dict  # {"full": "..."}
+    image: dict  # {"large": "..."}
 
 
 class CharacterEdge(BaseModel):
@@ -73,8 +91,8 @@ class RelationsDTO(BaseModel):
 
 class StaffNode(BaseModel):
     id: int
-    name: dict  # Contém {"full": "..."}
-    image: dict  # Contém {"large": "..."}
+    name: dict  # {"full": "..."}
+    image: dict  # {"large": "..."}
 
 
 class StaffEdge(BaseModel):
