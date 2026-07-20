@@ -25,7 +25,7 @@ async def get_anime_details(
         variables={"id": anime_id},
     )
 
-    return AnimeResource.model_validate(json).media
+    return AnimeResource.model_validate(json["data"]).media
 
 
 async def update_progress(
