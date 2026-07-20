@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class FuzzyDateDTO(BaseModel):
@@ -23,3 +23,15 @@ class AnimeProgressDTO(BaseModel):
     progress: Optional[int] = None
     started_at: Optional[date] = Field(None, alias="startedAt")
     completed_at: Optional[date] = Field(None, alias="completedAt")
+
+    @model_validator(mode="after")
+    def set_dates_based_on_status(self) -> "AnimeProgressDTO":
+        current_date = date.today()
+
+        if self.status == "CURRENT" and not self.started_at:
+            self.started_at = current_date
+
+        if self.status == "COMPLETED" and not self.completed_at:
+            self.completed_at = current_date
+
+        return self
