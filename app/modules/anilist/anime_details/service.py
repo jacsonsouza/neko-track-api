@@ -4,10 +4,7 @@ from app.modules.anilist.anime_details.dto.anime_progress_dto import (
     AnimeProgressDTO,
     FuzzyDateDTO,
 )
-from app.modules.anilist.anime_details.dto.anime_resource import (
-    AnimeDetailsDTO,
-    AnimeResource,
-)
+from app.modules.anilist.anime_details.dto.anime_resource import AnimeDetailsDTO
 from app.modules.anilist.anime_details.queries import (
     ANIME_DETAILS,
     SAVE_ANIME_PROGRESS,
