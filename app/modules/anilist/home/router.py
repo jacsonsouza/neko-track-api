@@ -6,7 +6,7 @@ from app.db.session import get_db
 from app.modules.anilist.home.services import get_user_watching_list
 from app.modules.auth.token_repo import get_anilist_access_token_for_user
 
-router = APIRouter(prefix="anilist/user", tags=["anilist", "user", "current"])
+router = APIRouter(prefix="/anilist/user", tags=["anilist", "user", "current"])
 
 
 @router.get("/{user_id}/watching")
