@@ -36,10 +36,6 @@ USER_WATCHING_ANIME_LISTS = """
                         color
                     }
                 }
-                mediaListEntry {
-                    id
-                    progress
-                }
             }
         }
     }
