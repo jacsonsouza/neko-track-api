@@ -6,9 +6,10 @@ from sqlalchemy import text
 
 from app.db.session import SessionLocal
 from app.modules.anilist.activities.router import router as activities_router
-from app.modules.anilist.anime_lists.router import router as user_anime_lists_router
 from app.modules.anilist.anime_details.router import router as anime_details_router
+from app.modules.anilist.anime_lists.router import router as user_anime_lists_router
 from app.modules.anilist.anime_search.router import router as anime_search_router
+from app.modules.anilist.home.router import router as home_router
 from app.modules.anilist.profile.router import router as profile_router
 from app.modules.anilist.replies.router import router as replies_router
 from app.modules.auth.router import router as auth_router
@@ -22,6 +23,7 @@ app.include_router(activities_router)
 app.include_router(user_anime_lists_router)
 app.include_router(anime_details_router)
 app.include_router(replies_router)
+app.include_router(home_router)
 
 
 @app.get("/health")
