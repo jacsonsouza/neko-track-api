@@ -40,3 +40,16 @@ USER_WATCHING_ANIME_LISTS = """
         }
     }
 """
+
+UPDATE_ANIME_PROGRESS = """
+    mutation($mediaId, $progress) {
+        SaveMediaListEntry(
+            mediaId: $mediaId,
+            progress: $progress
+        ) {
+            id
+            mediaId
+            progress
+        }
+    }
+"""
