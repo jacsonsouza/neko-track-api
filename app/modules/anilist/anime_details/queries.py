@@ -128,3 +128,16 @@ mutation (
   }
 }
 """
+
+UPDATE_EPISODE_PROGRESS = """
+    mutation($mediaId, $progress) {
+        SaveMediaListEntry(
+            mediaId: $mediaId,
+            progress: $progress
+        ) {
+            id
+            mediaId
+            progress
+        }
+    }
+"""

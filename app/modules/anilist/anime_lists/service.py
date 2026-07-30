@@ -1,6 +1,12 @@
 import httpx
 
-from app.modules.anilist.anime_lists.queries import USER_ANIME_LISTS
+from app.modules.anilist.anime_lists.models.anilist_response_model import (
+    AniListResponse,
+)
+from app.modules.anilist.anime_lists.queries import (
+    USER_ANIME_LISTS,
+    USER_WATCHING_ANIME_LISTS,
+)
 from app.modules.anilist.client import AnilistClient
 
 
@@ -24,3 +30,25 @@ async def get_user_anime_lists(
             "perPage": per_page,
         },
     )
+
+
+async def get_user_watching_list(
+    http: httpx.AsyncClient,
+    access_token: str,
+    user_id: int,
+    page: int = 10,
+    per_page: int = 10,
+) -> AniListResponse:
+    client = AnilistClient(http)
+
+    json = await client.graphql(
+        access_token=access_token,
+        query=USER_WATCHING_ANIME_LISTS,
+        variables={
+            "userId": user_id,
+            "page": page,
+            "perPage": per_page,
+        },
+    )
+
+    return AniListResponse.from_json(json)
