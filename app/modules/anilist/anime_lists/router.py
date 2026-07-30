@@ -48,4 +48,4 @@ async def user_watching(
             per_page,
         )
 
-        return {"pageInfo": response.page_info, "animes": response.get_filtered_entries}
+        return {"pageInfo": response.page_info, "animes": response.media_list}
