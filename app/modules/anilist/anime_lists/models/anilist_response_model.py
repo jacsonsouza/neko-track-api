@@ -35,16 +35,17 @@ class MediaEntry(BaseModel):
         if not self.media.next_airing_episode:
             return False
 
-        latest_released = self.media.next_airing_episode.episode - 1
+        latest_released = max(0, self.media.next_airing_episode.episode - 1)
+
         return self.progress < latest_released
 
     @property
     def is_finished_but_watching(self) -> bool:
         if self.media.episodes is None:
             return False
-        return (
-            self.progress < self.media.episodes and not self.media.next_airing_episode
-        )
+
+        has_no_more_airing = self.media.next_airing_episode is None
+        return (self.progress < self.media.episodes) and has_no_more_airing
 
     @property
     def should_include(self) -> bool:
