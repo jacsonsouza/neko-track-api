@@ -130,7 +130,7 @@ mutation (
 """
 
 UPDATE_EPISODE_PROGRESS = """
-    mutation($mediaId, $progress) {
+    mutation($mediaId: Int, $progress: Int) {
         SaveMediaListEntry(
             mediaId: $mediaId,
             progress: $progress
