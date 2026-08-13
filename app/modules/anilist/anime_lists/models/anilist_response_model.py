@@ -49,7 +49,7 @@ class MediaEntry(BaseModel):
 
     @property
     def should_include(self) -> bool:
-        return self.is_behind_airing or self.is_finished_but_watching
+        return self.is_behind_airing
 
 
 class AniListResponse(BaseModel):
