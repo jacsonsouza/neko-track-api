@@ -35,44 +35,39 @@ USER_ANIME_LISTS = """
 """
 
 USER_WATCHING_ANIME_LISTS = """
-    query ($userId: Int!, $page: Int, $perPage: Int) {
-        Page(page: $page, perPage: $perPage) {
-            pageInfo {
-                perPage
-                currentPage
-                hasNextPage
-            }
-            mediaList(
-                userId: $userId
-                type: ANIME
-                status: CURRENT
-                sort: [UPDATED_TIME_DESC]
-            ) {
-                status
-                progress
-                media {
-                    id
-                    meanScore
-                    episodes
-                    nextAiringEpisode {
-                        id
-                        airingAt
-                        timeUntilAiring
-                        episode
-                    }
-                    title {
-                        romaji
-                        english
-                        userPreferred
-                    }
-                    coverImage {
-                        extraLarge
-                        large
-                        medium
-                        color
-                    }
-                }
-            }
+query ($userId: Int!) {
+  Page(perPage: 50) {
+    mediaList(
+      userId: $userId
+      type: ANIME
+      status: CURRENT
+      sort: [UPDATED_TIME_DESC]
+    ) {
+      status
+      progress
+      media {
+        id
+        meanScore
+        episodes
+        nextAiringEpisode {
+          id
+          airingAt
+          timeUntilAiring
+          episode
         }
+        title {
+          romaji
+          english
+          userPreferred
+        }
+        coverImage {
+          extraLarge
+          large
+          medium
+          color
+        }
+      }
     }
+  }
+}
 """

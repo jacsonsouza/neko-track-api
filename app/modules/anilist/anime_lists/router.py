@@ -32,8 +32,6 @@ async def watch_lists(
 @router.get("/{user_id}/watching")
 async def user_watching(
     user_id: int,
-    page: int = Query(1, ge=1),
-    per_page: int = Query(20, ge=1, le=50),
     claims: AuthClaims = Depends(get_claims),
     db=Depends(get_db),
 ):
@@ -44,11 +42,6 @@ async def user_watching(
             http,
             access_token,
             claims.anilist_id,
-            page,
-            per_page,
         )
 
-        return {
-            "pageInfo": response.page_info,
-            "animes": response.media_list,
-        }
+        return response.get_filtered_entries()

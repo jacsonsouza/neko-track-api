@@ -36,8 +36,6 @@ async def get_user_watching_list(
     http: httpx.AsyncClient,
     access_token: str,
     user_id: int,
-    page: int = 10,
-    per_page: int = 10,
 ) -> AniListResponse:
     client = AnilistClient(http)
 
@@ -46,8 +44,6 @@ async def get_user_watching_list(
         query=USER_WATCHING_ANIME_LISTS,
         variables={
             "userId": user_id,
-            "page": page,
-            "perPage": per_page,
         },
     )
 

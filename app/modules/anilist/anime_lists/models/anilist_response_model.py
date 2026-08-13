@@ -53,7 +53,6 @@ class MediaEntry(BaseModel):
 
 
 class AniListResponse(BaseModel):
-    page_info: PageInfo = Field(..., alias="pageInfo")
     media_list: List[MediaEntry] = Field(..., alias="mediaList")
 
     @classmethod
