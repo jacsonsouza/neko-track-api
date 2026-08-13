@@ -35,8 +35,8 @@ USER_ANIME_LISTS = """
 """
 
 USER_WATCHING_ANIME_LISTS = """
-    query ($userId: Int!, $page: Int) {
-        Page(page: $page, perPage: 10) {
+    query ($userId: Int!, $page: Int, $perPage: Int) {
+        Page(page: $page, perPage: $perPage) {
             pageInfo {
                 perPage
                 currentPage
