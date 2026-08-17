@@ -59,6 +59,7 @@ async def update_episode_progress(
 ):
     client = AnilistClient(http)
 
+    # Add update status when progress is equal to total episodes
     return await client.graphql(
         access_token=access_token,
         query=UPDATE_EPISODE_PROGRESS,
