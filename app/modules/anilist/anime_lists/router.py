@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, Query
 
 from app.core.auth_dep import AuthClaims, get_claims
 from app.modules.anilist.anime_lists.service import (
-    get_user_anime_lists,
-    list_available_to_watch_entries,
+    anime_list_entries,
+    available_to_watch_entries,
 )
 from app.modules.auth.dependencies import get_current_anilist_access_token
 
@@ -28,11 +28,11 @@ async def get_my_anime_list(
     ] = None,
 ):
     async with httpx.AsyncClient(timeout=15) as http:
-        return await get_user_anime_lists(
+        return await anime_list_entries(
             http=http,
             access_token=access_token,
-            user_id=claims.anilist_id,
-            status=status,
+            anilist_user_id=claims.anilist_id,
+            list_status=status,
             page=page,
             per_page=per_page,
         )
@@ -47,10 +47,10 @@ async def get_my_available_to_watch_animes(
     ] = None,
 ):
     async with httpx.AsyncClient(timeout=15) as http:
-        response = await list_available_to_watch_entries(
+        response = await available_to_watch_entries(
             http=http,
             access_token=access_token,
-            user_id=claims.anilist_id,
+            anilist_user_id=claims.anilist_id,
         )
 
     return response.get_filtered_entries()

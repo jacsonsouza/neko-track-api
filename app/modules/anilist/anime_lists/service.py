@@ -4,17 +4,17 @@ from app.modules.anilist.anime_lists.models.anilist_response_model import (
     AniListResponse,
 )
 from app.modules.anilist.anime_lists.queries import (
+    ANIME_LIST_ENTRIES,
     AVAILABLE_TO_WATCH_ENTRIES,
-    USER_ANIME_LISTS,
 )
 from app.modules.anilist.client import AnilistClient
 
 
-async def get_user_anime_lists(
+async def anime_list_entries(
     http: httpx.AsyncClient,
     access_token: str,
-    user_id: int,
-    status: str,
+    anilist_user_id: int,
+    list_status: str,
     page: int = 1,
     per_page: int = 10,
 ):
@@ -22,20 +22,20 @@ async def get_user_anime_lists(
 
     return await client.graphql(
         access_token=access_token,
-        query=USER_ANIME_LISTS,
+        query=ANIME_LIST_ENTRIES,
         variables={
-            "userId": user_id,
-            "status": status,
+            "userId": anilist_user_id,
+            "status": list_status,
             "page": page,
             "perPage": per_page,
         },
     )
 
 
-async def list_available_to_watch_entries(
+async def available_to_watch_entries(
     http: httpx.AsyncClient,
     access_token: str,
-    user_id: int,
+    anilist_user_id: int,
 ) -> AniListResponse:
     client = AnilistClient(http)
 
@@ -43,7 +43,7 @@ async def list_available_to_watch_entries(
         access_token=access_token,
         query=AVAILABLE_TO_WATCH_ENTRIES,
         variables={
-            "userId": user_id,
+            "userId": anilist_user_id,
         },
     )
 

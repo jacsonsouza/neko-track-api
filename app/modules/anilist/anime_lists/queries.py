@@ -1,4 +1,4 @@
-USER_ANIME_LISTS = """
+ANIME_LIST_ENTRIES = """
     query ($userId: Int!, $status: MediaListStatus!, $page: Int) {
         Page(page: $page, perPage: 20) {
             pageInfo {
