@@ -1,9 +1,12 @@
-from typing import Annotated
+from typing import Annotated, List
 
 import httpx
 from fastapi import APIRouter, Depends, Query
 
 from app.core.auth_dep import AuthClaims, get_claims
+from app.modules.anilist.anime_lists.models.anilist_media_list_response import (
+    AnimeListEntry,
+)
 from app.modules.anilist.anime_lists.service import (
     anime_list_entries,
     available_to_watch_entries,
@@ -45,7 +48,7 @@ async def get_my_available_to_watch_animes(
         str,
         Depends(get_current_anilist_access_token),
     ] = None,
-):
+) -> List[AnimeListEntry]:
     async with httpx.AsyncClient(timeout=15) as http:
         response = await available_to_watch_entries(
             http=http,
@@ -53,4 +56,4 @@ async def get_my_available_to_watch_animes(
             anilist_user_id=claims.anilist_id,
         )
 
-    return response.get_filtered_entries()
+    return response.get_available_to_watch_entries()

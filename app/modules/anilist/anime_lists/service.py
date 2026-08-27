@@ -1,7 +1,7 @@
 import httpx
 
-from app.modules.anilist.anime_lists.models.anilist_response_model import (
-    AniListResponse,
+from app.modules.anilist.anime_lists.models.anilist_media_list_response import (
+    AniListMediaListResponse,
 )
 from app.modules.anilist.anime_lists.queries import (
     ANIME_LIST_ENTRIES,
@@ -36,7 +36,7 @@ async def available_to_watch_entries(
     http: httpx.AsyncClient,
     access_token: str,
     anilist_user_id: int,
-) -> AniListResponse:
+) -> AniListMediaListResponse:
     client = AnilistClient(http)
 
     json = await client.graphql(
@@ -47,4 +47,4 @@ async def available_to_watch_entries(
         },
     )
 
-    return AniListResponse.from_json(json)
+    return AniListMediaListResponse.from_json(json)
