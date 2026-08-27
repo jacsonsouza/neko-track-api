@@ -5,7 +5,10 @@ from pydantic import ValidationError
 from sqlalchemy import text
 
 from app.db.session import SessionLocal
-from app.modules.anilist.activities.router import router as activities_router
+from app.modules.anilist.activities.router import (
+    activities_router,
+    my_activities_router,
+)
 from app.modules.anilist.anime_details.router import router as anime_details_router
 from app.modules.anilist.anime_lists.router import router as user_anime_lists_router
 from app.modules.anilist.anime_search.router import router as anime_search_router
@@ -19,6 +22,7 @@ app.include_router(auth_router)
 app.include_router(anime_search_router)
 app.include_router(profile_router)
 app.include_router(activities_router)
+app.include_router(my_activities_router)
 app.include_router(user_anime_lists_router)
 app.include_router(anime_details_router)
 app.include_router(replies_router)
