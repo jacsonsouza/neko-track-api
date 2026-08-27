@@ -11,6 +11,7 @@ from app.modules.anilist.anime_details.dto.anime_resource import (
 from app.modules.anilist.anime_details.queries import (
     ANIME_DETAILS,
     SAVE_ANIME_PROGRESS,
+    UPDATE_EPISODE_PROGRESS,
 )
 from app.modules.anilist.client import AnilistClient
 
@@ -46,5 +47,24 @@ async def update_progress(
             "progress": data.progress,
             "startedAt": FuzzyDateDTO.from_date(data.started_at),
             "completedAt": FuzzyDateDTO.from_date(data.completed_at),
+        },
+    )
+
+
+async def update_episode_progress(
+    http: httpx.AsyncClient,
+    access_token: str,
+    media_id: int,
+    progress: int,
+):
+    client = AnilistClient(http)
+
+    # Add update status when progress is equal to total episodes
+    return await client.graphql(
+        access_token=access_token,
+        query=UPDATE_EPISODE_PROGRESS,
+        variables={
+            "mediaId": media_id,
+            "progress": progress,
         },
     )
