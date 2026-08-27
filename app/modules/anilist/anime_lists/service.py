@@ -4,8 +4,8 @@ from app.modules.anilist.anime_lists.models.anilist_response_model import (
     AniListResponse,
 )
 from app.modules.anilist.anime_lists.queries import (
+    AVAILABLE_TO_WATCH_ENTRIES,
     USER_ANIME_LISTS,
-    USER_WATCHING_ANIME_LISTS,
 )
 from app.modules.anilist.client import AnilistClient
 
@@ -32,7 +32,7 @@ async def get_user_anime_lists(
     )
 
 
-async def get_user_watching_list(
+async def list_available_to_watch_entries(
     http: httpx.AsyncClient,
     access_token: str,
     user_id: int,
@@ -41,7 +41,7 @@ async def get_user_watching_list(
 
     json = await client.graphql(
         access_token=access_token,
-        query=USER_WATCHING_ANIME_LISTS,
+        query=AVAILABLE_TO_WATCH_ENTRIES,
         variables={
             "userId": user_id,
         },

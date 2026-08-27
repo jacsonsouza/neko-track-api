@@ -34,7 +34,7 @@ USER_ANIME_LISTS = """
     }
 """
 
-USER_WATCHING_ANIME_LISTS = """
+AVAILABLE_TO_WATCH_ENTRIES = """
 query ($userId: Int!) {
   Page(perPage: 50) {
     mediaList(
