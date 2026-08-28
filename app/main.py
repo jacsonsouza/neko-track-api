@@ -11,7 +11,6 @@ from app.modules.anilist.activities.router import (
 )
 from app.modules.anilist.anime_details.router import animes_router
 from app.modules.anilist.anime_lists.router import router as user_anime_lists_router
-from app.modules.anilist.anime_search.router import router as anime_search_router
 from app.modules.anilist.profile.router import router as profile_router
 from app.modules.anilist.replies.router import router as replies_router
 from app.modules.auth.router import router as auth_router
@@ -19,7 +18,6 @@ from app.modules.auth.router import router as auth_router
 app = FastAPI(title="Neko Track Backend")
 
 app.include_router(auth_router)
-app.include_router(anime_search_router)
 app.include_router(profile_router)
 app.include_router(activities_router)
 app.include_router(my_activities_router)
