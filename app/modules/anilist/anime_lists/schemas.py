@@ -16,24 +16,6 @@ class UpdateAnimeListEntryRequest(BaseModel):
     started_at: date | None = Field(default=None, alias="startedAt")
     completed_at: date | None = Field(default=None, alias="completedAt")
 
-    # @model_validator(mode="after")
-    # def validate_patch(self) -> "UpdateAnimeListEntryRequest":
-    #     if not self.model_fields_set:
-    #         raise ValueError("At least one field must be provided")
-
-    #     null_fields = [
-    #         field for field in self.model_fields_set if getattr(self, field) is None
-    #     ]
-
-    #     if null_fields:
-    #         fields = ", ".join(null_fields)
-    #         raise ValueError(
-    #             f"These fields cannot be null: {fields}. "
-    #             "Omit a field to keep its current value."
-    #         )
-
-    #     return self
-
     def to_anilist_variables(self) -> dict[str, Any]:
         variables = self.model_dump(by_alias=True, exclude_unset=True)
 
