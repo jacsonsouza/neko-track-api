@@ -1,60 +1,34 @@
+from typing import Annotated
+
 import httpx
-from fastapi import APIRouter, Depends, Path
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Query
 
-from app.core.auth_dep import AuthClaims, get_claims
-from app.db.session import get_db
-from app.modules.anilist.anime_details.dto.anime_progress_dto import AnimeProgressDTO
 from app.modules.anilist.anime_details.dto.anime_resource import AnimeDetailsDTO
-from app.modules.anilist.anime_details.service import (
-    get_anime_details,
-    update_episode_progress,
-    update_progress,
-)
-from app.modules.auth.token_repo import get_anilist_access_token_for_user
+from app.modules.anilist.anime_details.service import get_anime_details, get_animes
+from app.modules.auth.dependencies import get_current_anilist_access_token
 
-router = APIRouter(prefix="/anilist/animes", tags=["anilist", "details"])
+animes_router = APIRouter(prefix="/api/v1/animes", tags=["anilist", "details"])
 
 
-@router.get("/{anime_id}")
+@animes_router.get("")
+async def animes(
+    search: str,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=50),
+    anilist_access_token: Annotated[
+        str, Depends(get_current_anilist_access_token)
+    ] = None,
+):
+    async with httpx.AsyncClient(timeout=15) as http:
+        return await get_animes(http, anilist_access_token, search, page, per_page)
+
+
+@animes_router.get("/{anime_id}")
 async def anime_details(
     anime_id: int,
-    claims: AuthClaims = Depends(get_claims),
-    db=Depends(get_db),
+    anilist_access_token: Annotated[
+        str, Depends(get_current_anilist_access_token)
+    ] = None,
 ) -> AnimeDetailsDTO:
-    access_token = get_anilist_access_token_for_user(db, claims.user_id)
-
     async with httpx.AsyncClient(timeout=15) as http:
-        return await get_anime_details(http, access_token, anime_id)
-
-
-@router.patch("/{anime_id}")
-async def anime_progress(
-    anime_id: int,
-    data: AnimeProgressDTO,
-    claims: AuthClaims = Depends(get_claims),
-    db=Depends(get_db),
-):
-    access_token = get_anilist_access_token_for_user(db, claims.user_id)
-
-    async with httpx.AsyncClient(timeout=15) as http:
-        return await update_progress(http, access_token, anime_id, data)
-
-
-class UpdateProgressRequest(BaseModel):
-    progress: int = Field(..., gt=0, description="Anime episodes progress")
-
-
-@router.patch("/{anime_id}/episodes")
-async def episodes_progress(
-    anime_id: int = Path(..., gt=0, description="Anime ID"),
-    body: UpdateProgressRequest = None,
-    claims: AuthClaims = Depends(get_claims),
-    db=Depends(get_db),
-):
-    access_token = get_anilist_access_token_for_user(db, claims.user_id)
-
-    async with httpx.AsyncClient(timeout=15) as http:
-        return await update_episode_progress(
-            http, access_token, anime_id, body.progress
-        )
+        return await get_anime_details(http, anilist_access_token, anime_id)
