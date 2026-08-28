@@ -18,10 +18,7 @@ from app.modules.anilist.anime_lists.service import (
 )
 from app.modules.auth.dependencies import get_current_anilist_access_token
 
-router = APIRouter(
-    prefix="/api/v1/me/anime-list",
-    tags=["anime-list"],
-)
+router = APIRouter(prefix="/api/v1/me/anime-list", tags=["anime-list"])
 
 
 @router.get("")
