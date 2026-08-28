@@ -1,20 +1,25 @@
 import httpx
 
-from app.modules.anilist.anime_lists.models.anilist_response_model import (
-    AniListResponse,
+from app.modules.anilist.anime_lists.models.anilist_media_list_response import (
+    AniListMediaListResponse,
 )
 from app.modules.anilist.anime_lists.queries import (
-    USER_ANIME_LISTS,
-    USER_WATCHING_ANIME_LISTS,
+    ANIME_LIST_ENTRIES,
+    AVAILABLE_TO_WATCH_ENTRIES,
+    SAVE_ANIME_LIST_ENTRY,
+)
+from app.modules.anilist.anime_lists.schemas import (
+    AnimeListEntryResponse,
+    UpdateAnimeListEntryRequest,
 )
 from app.modules.anilist.client import AnilistClient
 
 
-async def get_user_anime_lists(
+async def anime_list_entries(
     http: httpx.AsyncClient,
     access_token: str,
-    user_id: int,
-    status: str,
+    anilist_user_id: int,
+    list_status: str,
     page: int = 1,
     per_page: int = 10,
 ):
@@ -22,29 +27,51 @@ async def get_user_anime_lists(
 
     return await client.graphql(
         access_token=access_token,
-        query=USER_ANIME_LISTS,
+        query=ANIME_LIST_ENTRIES,
         variables={
-            "userId": user_id,
-            "status": status,
+            "userId": anilist_user_id,
+            "status": list_status,
             "page": page,
             "perPage": per_page,
         },
     )
 
 
-async def get_user_watching_list(
+async def available_to_watch_entries(
     http: httpx.AsyncClient,
     access_token: str,
-    user_id: int,
-) -> AniListResponse:
+    anilist_user_id: int,
+) -> AniListMediaListResponse:
     client = AnilistClient(http)
 
     json = await client.graphql(
         access_token=access_token,
-        query=USER_WATCHING_ANIME_LISTS,
+        query=AVAILABLE_TO_WATCH_ENTRIES,
         variables={
-            "userId": user_id,
+            "userId": anilist_user_id,
         },
     )
 
-    return AniListResponse.from_json(json)
+    return AniListMediaListResponse.from_json(json)
+
+
+async def update_anime_list_entry(
+    http: httpx.AsyncClient,
+    access_token: str,
+    anime_id: int,
+    data: UpdateAnimeListEntryRequest,
+):
+    client = AnilistClient(http)
+
+    variables = {
+        "mediaId": anime_id,
+        **data.to_anilist_variables(),
+    }
+
+    response = await client.graphql(
+        access_token=access_token,
+        query=SAVE_ANIME_LIST_ENTRY,
+        variables=variables,
+    )
+
+    return AnimeListEntryResponse.model_validate(response["data"]["SaveMediaListEntry"])

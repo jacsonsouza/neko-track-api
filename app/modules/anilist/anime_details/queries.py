@@ -93,51 +93,30 @@ query ($id: Int) {
 }
 """
 
-SAVE_ANIME_PROGRESS = """
-mutation (
-  $mediaId: Int
-  $status: MediaListStatus
-  $score: Float
-  $progress: Int
-  $startedAt: FuzzyDateInput
-  $completedAt: FuzzyDateInput
-) {
-  SaveMediaListEntry (
-    mediaId: $mediaId
-    status: $status
-    score: $score
-    progress: $progress
-    startedAt: $startedAt
-    completedAt: $completedAt
-  ) {
-    id
-    mediaId
-    status
-    score
-    progress
-    startedAt {
-      year
-      month
-      day
-    }
-    completedAt {
-      year
-      month
-      day
-    }
-  }
-}
-"""
-
-UPDATE_EPISODE_PROGRESS = """
-    mutation($mediaId: Int, $progress: Int) {
-        SaveMediaListEntry(
-            mediaId: $mediaId,
-            progress: $progress
-        ) {
+ANIMES = """
+query ($search: String, $page: Int, $perPage: Int) {
+    Page(page: $page, perPage: $perPage) {
+        pageInfo {
+            perPage
+            currentPage
+            hasNextPage
+        }
+        media(search: $search, type: ANIME, sort: POPULARITY_DESC) {
             id
-            mediaId
-            progress
+            title {
+                romaji
+                english
+                userPreferred
+            }
+            description
+            coverImage {
+                large
+            }
+            genres
+            episodes
+            status
+            averageScore
         }
     }
+}
 """

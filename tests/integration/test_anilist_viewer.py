@@ -6,7 +6,7 @@ from app.modules.anilist.client import ANILIST_GRAPHQL_URL, ANILIST_OAUTH_TOKEN_
 
 @respx.mock
 def test_viewer_requires_auth(client):
-    r = client.get("/anilist/viewer")
+    r = client.get("/api/v1/me/viewer")
     assert r.status_code == 401
 
 
@@ -31,7 +31,7 @@ def test_viewer_returns_data_using_saved_token(client):
 
     token = r2.headers["location"].split("token=")[1]
 
-    r3 = client.get("/anilist/viewer", headers={"Authorization": f"Bearer {token}"})
+    r3 = client.get("/api/v1/me/viewer", headers={"Authorization": f"Bearer {token}"})
 
     assert r3.status_code == 200
 

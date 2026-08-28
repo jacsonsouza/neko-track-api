@@ -1,3 +1,5 @@
+from typing import Annotated
+
 import httpx
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -6,9 +8,9 @@ from app.core.auth_dep import AuthClaims, get_claims
 from app.db.session import get_db
 from app.modules.anilist.profile.dto import UserProfileDTO
 from app.modules.anilist.profile.service import get_profile, viewer
-from app.modules.auth.token_repo import get_anilist_access_token_for_user
+from app.modules.auth.dependencies import get_current_anilist_access_token
 
-router = APIRouter(prefix="/anilist", tags=["anilist", "profile"])
+router = APIRouter(prefix="/api/v1/me", tags=["anilist", "profile"])
 
 
 @router.get("/viewer")
@@ -20,9 +22,9 @@ async def get_viewer(
 
 @router.get("/profile", response_model=UserProfileDTO)
 async def profile(
-    claims: AuthClaims = Depends(get_claims), db=Depends(get_db)
+    anilist_access_token: Annotated[
+        str, Depends(get_current_anilist_access_token)
+    ] = None,
 ) -> UserProfileDTO:
-    access_token = get_anilist_access_token_for_user(db, claims.user_id)
-
     async with httpx.AsyncClient(timeout=15) as http:
-        return await get_profile(http, access_token)
+        return await get_profile(http, anilist_access_token)
