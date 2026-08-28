@@ -9,7 +9,7 @@ from app.modules.anilist.activities.router import (
     activities_router,
     my_activities_router,
 )
-from app.modules.anilist.anime_details.router import router as anime_details_router
+from app.modules.anilist.anime_details.router import animes_router
 from app.modules.anilist.anime_lists.router import router as user_anime_lists_router
 from app.modules.anilist.anime_search.router import router as anime_search_router
 from app.modules.anilist.profile.router import router as profile_router
@@ -24,7 +24,7 @@ app.include_router(profile_router)
 app.include_router(activities_router)
 app.include_router(my_activities_router)
 app.include_router(user_anime_lists_router)
-app.include_router(anime_details_router)
+app.include_router(animes_router)
 app.include_router(replies_router)
 
 

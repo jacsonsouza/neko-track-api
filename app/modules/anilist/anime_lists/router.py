@@ -7,9 +7,14 @@ from app.core.auth_dep import AuthClaims, get_claims
 from app.modules.anilist.anime_lists.models.anilist_media_list_response import (
     AnimeListEntry,
 )
+from app.modules.anilist.anime_lists.schemas import (
+    AnimeListEntryResponse,
+    UpdateAnimeListEntryRequest,
+)
 from app.modules.anilist.anime_lists.service import (
     anime_list_entries,
     available_to_watch_entries,
+    update_anime_list_entry,
 )
 from app.modules.auth.dependencies import get_current_anilist_access_token
 
@@ -57,3 +62,15 @@ async def get_my_available_to_watch_animes(
         )
 
     return response.get_available_to_watch_entries()
+
+
+@router.patch("/{anime_id}", response_model=AnimeListEntryResponse)
+async def update_my_anime_list_entry(
+    anime_id: int,
+    body: UpdateAnimeListEntryRequest,
+    anilist_access_token: Annotated[
+        str, Depends(get_current_anilist_access_token)
+    ] = None,
+) -> AnimeListEntryResponse:
+    async with httpx.AsyncClient(timeout=15) as http:
+        return await update_anime_list_entry(http, anilist_access_token, anime_id, body)

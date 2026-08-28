@@ -71,3 +71,39 @@ query ($userId: Int!) {
   }
 }
 """
+
+SAVE_ANIME_LIST_ENTRY = """
+mutation (
+  $mediaId: Int
+  $status: MediaListStatus
+  $score: Float
+  $progress: Int
+  $startedAt: FuzzyDateInput
+  $completedAt: FuzzyDateInput
+) {
+  SaveMediaListEntry (
+    mediaId: $mediaId
+    status: $status
+    score: $score
+    progress: $progress
+    startedAt: $startedAt
+    completedAt: $completedAt
+  ) {
+    id
+    mediaId
+    status
+    score
+    progress
+    startedAt {
+      year
+      month
+      day
+    }
+    completedAt {
+      year
+      month
+      day
+    }
+  }
+}
+"""

@@ -6,6 +6,11 @@ from app.modules.anilist.anime_lists.models.anilist_media_list_response import (
 from app.modules.anilist.anime_lists.queries import (
     ANIME_LIST_ENTRIES,
     AVAILABLE_TO_WATCH_ENTRIES,
+    SAVE_ANIME_LIST_ENTRY,
+)
+from app.modules.anilist.anime_lists.schemas import (
+    AnimeListEntryResponse,
+    UpdateAnimeListEntryRequest,
 )
 from app.modules.anilist.client import AnilistClient
 
@@ -48,3 +53,25 @@ async def available_to_watch_entries(
     )
 
     return AniListMediaListResponse.from_json(json)
+
+
+async def update_anime_list_entry(
+    http: httpx.AsyncClient,
+    access_token: str,
+    anime_id: int,
+    data: UpdateAnimeListEntryRequest,
+):
+    client = AnilistClient(http)
+
+    variables = {
+        "mediaId": anime_id,
+        **data.to_anilist_variables(),
+    }
+
+    response = await client.graphql(
+        access_token=access_token,
+        query=SAVE_ANIME_LIST_ENTRY,
+        variables=variables,
+    )
+
+    return AnimeListEntryResponse.model_validate(response["data"]["SaveMediaListEntry"])

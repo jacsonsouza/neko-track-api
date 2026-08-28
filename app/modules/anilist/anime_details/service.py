@@ -1,18 +1,10 @@
 import httpx
 
-from app.modules.anilist.anime_details.dto.anime_progress_dto import (
-    AnimeProgressDTO,
-    FuzzyDateDTO,
-)
 from app.modules.anilist.anime_details.dto.anime_resource import (
     AnimeDetailsDTO,
     AnimeResource,
 )
-from app.modules.anilist.anime_details.queries import (
-    ANIME_DETAILS,
-    SAVE_ANIME_PROGRESS,
-    UPDATE_EPISODE_PROGRESS,
-)
+from app.modules.anilist.anime_details.queries import ANIME_DETAILS
 from app.modules.anilist.client import AnilistClient
 
 
@@ -30,41 +22,3 @@ async def get_anime_details(
     )
 
     return AnimeResource.model_validate(json["data"]).media
-
-
-async def update_progress(
-    http: httpx.AsyncClient, access_token: str, anime_id: int, data: AnimeProgressDTO
-):
-    client = AnilistClient(http)
-
-    return await client.graphql(
-        access_token=access_token,
-        query=SAVE_ANIME_PROGRESS,
-        variables={
-            "mediaId": anime_id,
-            "status": data.status,
-            "score": data.score,
-            "progress": data.progress,
-            "startedAt": FuzzyDateDTO.from_date(data.started_at),
-            "completedAt": FuzzyDateDTO.from_date(data.completed_at),
-        },
-    )
-
-
-async def update_episode_progress(
-    http: httpx.AsyncClient,
-    access_token: str,
-    media_id: int,
-    progress: int,
-):
-    client = AnilistClient(http)
-
-    # Add update status when progress is equal to total episodes
-    return await client.graphql(
-        access_token=access_token,
-        query=UPDATE_EPISODE_PROGRESS,
-        variables={
-            "mediaId": media_id,
-            "progress": progress,
-        },
-    )
