@@ -19,3 +19,13 @@ def test_state_expires():
     state = create_state(ttl_seconds=1)
     time.sleep(2)
     assert validate_state(state) is False
+
+
+def test_state_single_use():
+    state = create_state(ttl_seconds=60)
+    assert validate_state(state) is True
+    assert validate_state(state) is False
+
+
+def test_state_invalid_base64_payload():
+    assert validate_state("aaa.aaa") is False
