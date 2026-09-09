@@ -16,6 +16,21 @@ class UpdateAnimeListEntryRequest(BaseModel):
     started_at: date | None = Field(default=None, alias="startedAt")
     completed_at: date | None = Field(default=None, alias="completedAt")
 
+    @model_validator(mode="after")
+    def check_at_least_one_field_set(self) -> "UpdateAnimeListEntryRequest":
+        if all(
+            v is None
+            for v in [
+                self.status,
+                self.score,
+                self.progress,
+                self.started_at,
+                self.completed_at,
+            ]
+        ):
+            raise ValueError("At least one field must be provided")
+        return self
+
     def to_anilist_variables(self) -> dict[str, Any]:
         variables = self.model_dump(by_alias=True, exclude_unset=True)
 

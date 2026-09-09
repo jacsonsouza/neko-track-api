@@ -133,6 +133,7 @@ def test_update_anime_list_entry_sends_only_provided_fields(
 
 
 @pytest.mark.parametrize("body", [{}, {"progress": None}])
+@respx.mock
 def test_update_anime_list_entry_rejects_empty_or_null_fields(
     client,
     make_authenticated_anilist_user,

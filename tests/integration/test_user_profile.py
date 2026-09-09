@@ -88,7 +88,7 @@ def test_should_not_allow_access_without_a_valid_jwt(client):
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid token"
+    assert response.json()["detail"] == "Invalid token."
 
 
 @respx.mock

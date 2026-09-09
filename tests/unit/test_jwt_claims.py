@@ -82,3 +82,25 @@ def test_get_claims_should_raise_401_when_token_is_expired():
 
     assert exc_info.value.status_code == 401
     assert exc_info.value.detail == "Token has expired."
+
+
+def test_get_claims_should_raise_401_when_signed_by_different_secret():
+    payload = {
+        "iss": settings.jwt_issuer,
+        "sub": "1",
+        "anilist_id": 99,
+        "exp": int(time.time()) + 3600,
+    }
+    token = jwt.encode(payload, "wrong-secret", algorithm="HS256")
+
+    with pytest.raises(HTTPException) as exc_info:
+        get_claims(token)
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Invalid token."
+
+
+def test_get_claims_should_raise_401_when_scheme_is_not_bearer():
+    with pytest.raises(HTTPException) as exc_info:
+        get_claims(None)
+    assert exc_info.value.status_code == 401
