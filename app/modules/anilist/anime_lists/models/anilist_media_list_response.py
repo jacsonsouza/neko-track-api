@@ -3,7 +3,6 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from app.modules.anilist.models.cover_image_model import CoverImage
-from app.modules.anilist.models.page_info_model import PageInfo
 from app.modules.anilist.models.title_model import Title
 
 
@@ -14,7 +13,7 @@ class NextAiringEpisode(BaseModel):
     episode: int
 
 
-class Media(BaseModel):
+class AnimeListMedia(BaseModel):
     id: int
     mean_score: Optional[int] = Field(None, alias="meanScore")
     episodes: Optional[int] = None
@@ -25,13 +24,13 @@ class Media(BaseModel):
     )
 
 
-class MediaEntry(BaseModel):
+class AnimeListEntry(BaseModel):
     status: str
     progress: int
-    media: Media
+    media: AnimeListMedia
 
     @property
-    def is_behind_airing(self) -> bool:
+    def is_behind_released_episodes(self) -> bool:
         if not self.media.next_airing_episode:
             return False
 
@@ -40,7 +39,7 @@ class MediaEntry(BaseModel):
         return self.progress < latest_released
 
     @property
-    def is_finished_but_watching(self) -> bool:
+    def is_finished_with_unwatched_episodes(self) -> bool:
         if self.media.episodes is None:
             return False
 
@@ -48,17 +47,21 @@ class MediaEntry(BaseModel):
         return (self.progress < self.media.episodes) and has_no_more_airing
 
     @property
-    def should_include(self) -> bool:
-        return self.is_behind_airing or self.is_finished_but_watching
+    def has_available_unwatched_episodes(self) -> bool:
+        return (
+            self.is_behind_released_episodes or self.is_finished_with_unwatched_episodes
+        )
 
 
-class AniListResponse(BaseModel):
-    media_list: List[MediaEntry] = Field(..., alias="mediaList")
+class AniListMediaListResponse(BaseModel):
+    media_list: List[AnimeListEntry] = Field(..., alias="mediaList")
 
     @classmethod
-    def from_json(cls, raw_data: dict) -> "AniListResponse":
+    def from_json(cls, raw_data: dict) -> "AniListMediaListResponse":
         page_data = raw_data.get("data", {}).get("Page", {})
         return cls(**page_data)
 
-    def get_filtered_entries(self) -> List[MediaEntry]:
-        return [entry for entry in self.media_list if entry.should_include]
+    def get_available_to_watch_entries(self) -> List[AnimeListEntry]:
+        return [
+            entry for entry in self.media_list if entry.has_available_unwatched_episodes
+        ]

@@ -70,7 +70,7 @@ def test_should_get_user_profile_infos(client, auth_headers, anilist_profile_pay
 
     route = respx.post(ANILIST_GRAPHQL_URL).mock(side_effect=_assert_and_reply)
 
-    response = client.get("/anilist/profile", headers=auth_headers["headers"])
+    response = client.get("/api/v1/me/profile", headers=auth_headers["headers"])
     data = response.json()
     user = auth_headers["user"]
 
@@ -84,16 +84,16 @@ def test_should_get_user_profile_infos(client, auth_headers, anilist_profile_pay
 @respx.mock
 def test_should_not_allow_access_without_a_valid_jwt(client):
     response = client.get(
-        "/anilist/profile", headers={"Authorization": f"Bearer invalid_jwt"}
+        "/api/v1/me/profile", headers={"Authorization": f"Bearer invalid_jwt"}
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid token"
+    assert response.json()["detail"] == "Invalid token."
 
 
 @respx.mock
 def test_should_not_allow_access_without_authorization_header(client):
-    response = client.get("/anilist/profile")
+    response = client.get("/api/v1/me/profile")
 
     assert response.status_code == 401
 
@@ -105,11 +105,11 @@ def test_should_return_error_when_user_has_no_anilist_token(client):
     jwt = create_app_jwt(user.id, user.anilist_id)
 
     response = client.get(
-        "/anilist/profile", headers={"Authorization": f"Bearer {jwt}"}
+        "/api/v1/me/profile", headers={"Authorization": f"Bearer {jwt}"}
     )
 
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Anilist token not found for user"
+    assert response.status_code == 403
+    assert response.json()["detail"] == "AniList account is not connected"
 
 
 @respx.mock
@@ -120,7 +120,7 @@ def test_should_fail_when_anilist_payload_is_invalid(client, auth_headers):
         return_value=httpx.Response(200, json=invalid_payload)
     )
 
-    response = client.get("/anilist/profile", headers=auth_headers["headers"])
+    response = client.get("/api/v1/me/profile", headers=auth_headers["headers"])
 
     assert response.status_code == 502
     assert response.json()["detail"] == "Invalid AniList response"

@@ -47,7 +47,7 @@ def test_should_get_user_activities(client, auth_headers, anilist_activities_pay
     )
 
     response = client.get(
-        "anilist/user/activities",
+        "api/v1/me/activities",
         params={"page": 1, "per_page": 10},
         headers=auth_headers["headers"],
     )

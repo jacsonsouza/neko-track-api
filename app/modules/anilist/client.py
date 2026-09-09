@@ -1,6 +1,5 @@
 import json
 from typing import Any
-from wsgiref import headers
 
 import httpx
 
