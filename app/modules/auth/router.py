@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
-from pytest import Session
+from sqlalchemy.orm import Session
 
 from app.core.auth_dep import AuthClaims, get_claims
 from app.core.config import settings
