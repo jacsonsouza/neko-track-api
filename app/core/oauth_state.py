@@ -5,6 +5,7 @@ import json
 import os
 import time
 
+from app.core.cache import state_cache
 from app.core.config import settings
 
 _STATE_SECRET = settings.jwt_secret.encode()
@@ -20,11 +21,14 @@ def __b64url_decode(data: str) -> bytes:
 
 
 def create_state(ttl_seconds: int = 600) -> str:
-    payload = {"n": _b64url(os.urandom(16)), "exp": int(time.time() + ttl_seconds)}
+    nonce = _b64url(os.urandom(16))
+    payload = {"n": nonce, "exp": int(time.time() + ttl_seconds)}
     payload_bytes = json.dumps(payload, separators=(",", ":")).encode()
     payload_b64 = _b64url(payload_bytes)
     sig = hmac.new(_STATE_SECRET, payload_b64.encode(), hashlib.sha256).digest()
     sig_b64 = _b64url(sig)
+
+    state_cache.set(nonce, ttl_seconds)
 
     return f"{payload_b64}.{sig_b64}"
 
@@ -45,8 +49,12 @@ def validate_state(state: str) -> bool:
 
     try:
         payload = json.loads(__b64url_decode(payload_b64))
+        nonce = str(payload["n"])
         exp = int(payload["exp"])
     except Exception:
         return False
 
-    return time.time() <= exp
+    if time.time() > exp:
+        return False
+
+    return state_cache.pop(nonce)
