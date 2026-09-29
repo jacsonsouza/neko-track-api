@@ -1,34 +1,27 @@
-import json
-
-import httpx
 import pytest
-import respx
 
 from app.core.security import create_app_jwt
-from app.modules.anilist.client import ANILIST_GRAPHQL_URL
 from tests.conftest import AuthenticatedAniListUser
 from tests.factories.user_factory import UserFactory
 
 
-def _empty_anime_list_response() -> dict:
+def _empty_anime_list_data() -> dict:
     return {
-        "data": {
-            "Page": {
-                "pageInfo": {
-                    "currentPage": 1,
-                    "perPage": 10,
-                    "hasNextPage": False,
-                },
-                "mediaList": [],
-            }
+        "Page": {
+            "pageInfo": {
+                "currentPage": 1,
+                "perPage": 10,
+                "hasNextPage": False,
+            },
+            "mediaList": [],
         }
     }
 
 
-@respx.mock
 def test_anime_list_uses_the_authenticated_users_anilist_token(
     client,
     make_authenticated_anilist_user,
+    anilist_gateway,
 ):
     authenticated_user: AuthenticatedAniListUser = make_authenticated_anilist_user(
         anilist_id=101,
@@ -40,23 +33,7 @@ def test_anime_list_uses_the_authenticated_users_anilist_token(
         access_token="anilist-token-for-user-b",
         name="User B",
     )
-
-    def assert_request_uses_user_as_token(request: httpx.Request) -> httpx.Response:
-        assert request.headers["Authorization"] == (
-            f"Bearer {authenticated_user.access_token}"
-        )
-
-        payload = json.loads(request.content)
-        assert payload["variables"] == {
-            "userId": authenticated_user.user.anilist_id,
-            "status": "CURRENT",
-            "page": 1,
-            "perPage": 10,
-        }
-
-        return httpx.Response(200, json=_empty_anime_list_response())
-
-    respx.post(ANILIST_GRAPHQL_URL).mock(side_effect=assert_request_uses_user_as_token)
+    anilist_gateway.data = _empty_anime_list_data()
 
     response = client.get(
         "/api/v1/me/anime-list",
@@ -69,6 +46,16 @@ def test_anime_list_uses_the_authenticated_users_anilist_token(
     body = response.json()
     assert body["pageInfo"] == {"perPage": 10, "currentPage": 1, "hasNextPage": False}
     assert body["entries"] == []
+
+    # The gateway must be called with the token of the user making the request.
+    call = anilist_gateway.last_call
+    assert call.access_token == authenticated_user.access_token
+    assert call.variables == {
+        "userId": authenticated_user.user.anilist_id,
+        "status": "CURRENT",
+        "page": 1,
+        "perPage": 10,
+    }
 
 
 def test_anime_list_requires_a_connected_anilist_account(client):
@@ -85,44 +72,37 @@ def test_anime_list_requires_a_connected_anilist_account(client):
     assert response.json()["detail"] == "AniList account is not connected"
 
 
-@respx.mock
 def test_available_to_watch_returns_public_entries_only(
-    client, make_authenticated_anilist_user
+    client, make_authenticated_anilist_user, anilist_gateway
 ):
     authenticated_user: AuthenticatedAniListUser = make_authenticated_anilist_user(
         anilist_id=606,
         access_token="anilist-token-for-available",
     )
 
-    payload = {
-        "data": {
-            "Page": {
-                "mediaList": [
-                    {
-                        "status": "CURRENT",
-                        "progress": 3,
-                        "media": {
-                            "id": 1,
-                            "meanScore": 82,
-                            "episodes": 12,
-                            "nextAiringEpisode": {
-                                "id": 900,
-                                "airingAt": 1_700_000_000,
-                                "timeUntilAiring": 100,
-                                "episode": 6,
-                            },
-                            "title": {"romaji": "Frieren", "userPreferred": "Frieren"},
-                            "coverImage": {"extraLarge": "img", "color": "#fff"},
+    anilist_gateway.data = {
+        "Page": {
+            "mediaList": [
+                {
+                    "status": "CURRENT",
+                    "progress": 3,
+                    "media": {
+                        "id": 1,
+                        "meanScore": 82,
+                        "episodes": 12,
+                        "nextAiringEpisode": {
+                            "id": 900,
+                            "airingAt": 1_700_000_000,
+                            "timeUntilAiring": 100,
+                            "episode": 6,
                         },
-                    }
-                ]
-            }
+                        "title": {"romaji": "Frieren", "userPreferred": "Frieren"},
+                        "coverImage": {"extraLarge": "img", "color": "#fff"},
+                    },
+                }
+            ]
         }
     }
-
-    respx.post(ANILIST_GRAPHQL_URL).mock(
-        return_value=httpx.Response(200, json=payload)
-    )
 
     response = client.get(
         "/api/v1/me/anime-list/available-to-watch",
@@ -141,41 +121,29 @@ def test_available_to_watch_returns_public_entries_only(
     assert entry["media"]["title"]["userPreferred"] == "Frieren"
     assert entry["media"]["nextAiringEpisode"]["episode"] == 6
 
+    call = anilist_gateway.last_call
+    assert call.access_token == authenticated_user.access_token
+    assert call.variables == {"userId": 606}
 
-@respx.mock
+
 def test_update_anime_list_entry_sends_only_provided_fields(
     client,
     make_authenticated_anilist_user,
+    anilist_gateway,
 ):
     authenticated_user: AuthenticatedAniListUser = make_authenticated_anilist_user(
         anilist_id=404,
         access_token="anilist-token-for-update",
     )
-
-    def assert_partial_update_request(request: httpx.Request) -> httpx.Response:
-        assert request.headers["Authorization"] == (
-            f"Bearer {authenticated_user.access_token}"
-        )
-
-        payload = json.loads(request.content)
-        assert payload["variables"] == {"mediaId": 999, "progress": 6}
-
-        return httpx.Response(
-            200,
-            json={
-                "data": {
-                    "SaveMediaListEntry": {
-                        "id": 1,
-                        "mediaId": 999,
-                        "status": "CURRENT",
-                        "score": 8.0,
-                        "progress": 6,
-                    }
-                }
-            },
-        )
-
-    respx.post(ANILIST_GRAPHQL_URL).mock(side_effect=assert_partial_update_request)
+    anilist_gateway.data = {
+        "SaveMediaListEntry": {
+            "id": 1,
+            "mediaId": 999,
+            "status": "CURRENT",
+            "score": 8.0,
+            "progress": 6,
+        }
+    }
 
     response = client.patch(
         "/api/v1/me/anime-list/999",
@@ -192,9 +160,12 @@ def test_update_anime_list_entry_sends_only_provided_fields(
         "progress": 6,
     }
 
+    call = anilist_gateway.last_call
+    assert call.access_token == authenticated_user.access_token
+    assert call.variables == {"mediaId": 999, "progress": 6}
+
 
 @pytest.mark.parametrize("body", [{}, {"progress": None}])
-@respx.mock
 def test_update_anime_list_entry_rejects_empty_or_null_fields(
     client,
     make_authenticated_anilist_user,

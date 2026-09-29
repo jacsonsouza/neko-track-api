@@ -1,27 +1,9 @@
-import httpx
-import respx
-
-from app.modules.anilist.client import ANILIST_GRAPHQL_URL, ANILIST_OAUTH_TOKEN_URL
-
-
-@respx.mock
 def test_me_requires_auth(client):
     r = client.get("/auth/anilist/me")
     assert r.status_code == 401
 
 
-@respx.mock
-def test_me_returns_user_after_login(client):
-    respx.post(ANILIST_OAUTH_TOKEN_URL).mock(
-        return_value=httpx.Response(200, json={"access_token": "token123"})
-    )
-
-    respx.post(ANILIST_GRAPHQL_URL).mock(
-        return_value=httpx.Response(
-            200, json={"data": {"Viewer": {"id": 99, "name": "Jacson"}}}
-        )
-    )
-
+def test_me_returns_user_after_login(client, anilist_gateway):
     r1 = client.get("/auth/anilist/start", follow_redirects=False)
     state = r1.headers["location"].split("state=")[1]
 
@@ -39,3 +21,9 @@ def test_me_returns_user_after_login(client):
 
     assert data["anilist_id"] == 99
     assert data["name"] == "Jacson"
+
+    assert [call.method for call in anilist_gateway.calls] == [
+        "exchange_code_for_token",
+        "viewer",
+    ]
+    assert anilist_gateway.calls[0].code == "abc"

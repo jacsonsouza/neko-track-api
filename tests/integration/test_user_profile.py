@@ -1,10 +1,7 @@
-import httpx
 import pytest
-import respx
 
 from app.core.crypto import encrypt_token
 from app.core.security import create_app_jwt
-from app.modules.anilist.client import ANILIST_GRAPHQL_URL
 from tests.factories.anilist_token_factory import AnilistTokenFactory
 from tests.factories.user_factory import UserFactory
 
@@ -34,54 +31,49 @@ def auth_headers():
 
 
 @pytest.fixture
-def anilist_profile_payload():
+def anilist_profile_data():
     return {
-        "data": {
-            "Viewer": {
-                "id": 123,
-                "name": "Jacson",
-                "about": "",
-                "bannerImage": "anilist.co/x.img",
-                "avatar": {
-                    "large": "anilist.co/large.img",
-                    "medium": "anilist.co/medium.img",
-                },
-                "statistics": {
-                    "anime": {
-                        "count": 10,
-                        "meanScore": 8.0,
-                        "episodesWatched": 240,
-                        "standardDeviation": 8.0,
-                    }
-                },
-            }
+        "Viewer": {
+            "id": 123,
+            "name": "Jacson",
+            "about": "",
+            "bannerImage": "anilist.co/x.img",
+            "avatar": {
+                "large": "anilist.co/large.img",
+                "medium": "anilist.co/medium.img",
+            },
+            "statistics": {
+                "anime": {
+                    "count": 10,
+                    "meanScore": 8.0,
+                    "episodesWatched": 240,
+                    "standardDeviation": 8.0,
+                }
+            },
         }
     }
 
 
-@respx.mock
-def test_should_get_user_profile_infos(client, auth_headers, anilist_profile_payload):
-    def _assert_and_reply(request: httpx.Request) -> httpx.Response:
-        assert request.headers.get("Authorization") == (
-            f"Bearer {auth_headers['access_token']}"
-        )
-
-        return httpx.Response(200, json=anilist_profile_payload)
-
-    route = respx.post(ANILIST_GRAPHQL_URL).mock(side_effect=_assert_and_reply)
+def test_should_get_user_profile_infos(
+    client, auth_headers, anilist_profile_data, anilist_gateway
+):
+    anilist_gateway.data = anilist_profile_data
 
     response = client.get("/api/v1/me/profile", headers=auth_headers["headers"])
+
     data = response.json()
-    user = auth_headers["user"]
 
     assert response.status_code == 200
-    assert data["id"] == user.anilist_id
-    assert data["name"] == user.name
+    assert data["id"] == auth_headers["user"].anilist_id
+    assert data["name"] == "Jacson"
     assert data["avatar"]["large"] == "anilist.co/large.img"
     assert data["statistics"]["anime"]["count"] == 10
 
+    call = anilist_gateway.last_call
+    assert call.access_token == auth_headers["access_token"]
+    assert "ViewerProfile" in call.query
 
-@respx.mock
+
 def test_should_not_allow_access_without_a_valid_jwt(client):
     response = client.get(
         "/api/v1/me/profile", headers={"Authorization": f"Bearer invalid_jwt"}
@@ -91,14 +83,12 @@ def test_should_not_allow_access_without_a_valid_jwt(client):
     assert response.json()["detail"] == "Invalid token."
 
 
-@respx.mock
 def test_should_not_allow_access_without_authorization_header(client):
     response = client.get("/api/v1/me/profile")
 
     assert response.status_code == 401
 
 
-@respx.mock
 def test_should_return_error_when_user_has_no_anilist_token(client):
     user = UserFactory.create()
 
@@ -112,13 +102,10 @@ def test_should_return_error_when_user_has_no_anilist_token(client):
     assert response.json()["detail"] == "AniList account is not connected"
 
 
-@respx.mock
-def test_should_fail_when_anilist_payload_is_invalid(client, auth_headers):
-    invalid_payload = {"data": {"Viewer": None}}
-
-    respx.post(ANILIST_GRAPHQL_URL).mock(
-        return_value=httpx.Response(200, json=invalid_payload)
-    )
+def test_should_fail_when_anilist_payload_is_invalid(
+    client, auth_headers, anilist_gateway
+):
+    anilist_gateway.data = {"Viewer": None}
 
     response = client.get("/api/v1/me/profile", headers=auth_headers["headers"])
 
