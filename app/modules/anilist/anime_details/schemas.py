@@ -163,6 +163,7 @@ class AnimeSearchResponse(BaseModel):
     animes: list[AnimeSummaryResponse]
 
     @classmethod
-    def from_graphql(cls, payload: dict) -> "AnimeSearchResponse":
-        page = (payload.get("data") or {}).get("Page") or {}
+    def from_graphql(cls, data: dict) -> "AnimeSearchResponse":
+        """Build from the GraphQL ``data`` object (gateway already unwrapped)."""
+        page = data.get("Page") or {}
         return cls(page_info=page.get("pageInfo"), animes=page.get("media") or [])

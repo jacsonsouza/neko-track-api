@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import Literal
 
 from fastapi import FastAPI
@@ -14,11 +15,23 @@ from app.modules.anilist.activities.router import (
 )
 from app.modules.anilist.anime_details.router import animes_router
 from app.modules.anilist.anime_lists.router import router as user_anime_lists_router
+from app.modules.anilist.gateway import create_gateway
 from app.modules.anilist.profile.router import router as profile_router
 from app.modules.anilist.replies.router import router as replies_router
 from app.modules.auth.router import router as auth_router
 
-app = FastAPI(title="Neko Track Backend", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Owns the AniList gateway: one ``httpx`` client for the whole process."""
+    app.state.anilist_gateway = create_gateway()
+    try:
+        yield
+    finally:
+        await app.state.anilist_gateway.aclose()
+
+
+app = FastAPI(title="Neko Track Backend", version="1.0.0", lifespan=lifespan)
 
 register_exception_handlers(app)
 

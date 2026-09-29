@@ -826,6 +826,7 @@
           "FORBIDDEN",
           "NOT_FOUND",
           "VALIDATION_ERROR",
+          "RATE_LIMITED",
           "INTERNAL_ERROR",
           "UPSTREAM_ERROR"
         ],
@@ -2273,6 +2274,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -2282,6 +2293,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -2350,6 +2371,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -2359,6 +2390,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -2435,6 +2476,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -2444,6 +2495,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -2535,6 +2596,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -2544,6 +2615,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -2613,6 +2694,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -2622,6 +2713,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -2705,6 +2806,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -2714,6 +2825,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -2806,6 +2927,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -2815,6 +2946,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -2872,6 +3013,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -2881,6 +3032,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -2959,6 +3120,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -2968,6 +3139,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -3025,6 +3206,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -3034,6 +3225,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -3092,6 +3293,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -3101,6 +3312,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -3170,6 +3391,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -3179,6 +3410,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -3256,6 +3497,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -3265,6 +3516,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -3339,6 +3600,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -3348,6 +3619,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "summary": "Callback",
@@ -3400,6 +3681,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -3409,6 +3700,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "security": [
@@ -3459,6 +3760,16 @@
             },
             "description": "Request validation error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList rate limit exceeded (Retry-After header)"
+          },
           "502": {
             "content": {
               "application/json": {
@@ -3468,6 +3779,16 @@
               }
             },
             "description": "Invalid AniList response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "AniList request timed out"
           }
         },
         "summary": "Start",

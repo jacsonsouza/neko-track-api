@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -6,6 +8,7 @@ from app.core.auth_dep import AuthClaims, get_claims
 from app.core.config import settings
 from app.core.oauth_state import create_state
 from app.db.session import get_db
+from app.modules.anilist.gateway import AnilistGateway, get_anilist_gateway
 from app.modules.auth.schemas import MeResponse
 from app.modules.auth.service import login_with_anilist_callback
 from app.modules.users.repo import get_by_id as get_by_user_id
@@ -42,8 +45,15 @@ def start() -> RedirectResponse:
         "400": {"description": "Missing, invalid or replayed state"},
     },
 )
-async def callback(code: str, state: str, db: Session = Depends(get_db)) -> RedirectResponse:
-    result = await login_with_anilist_callback(db, code=code, state=state)
+async def callback(
+    code: str,
+    state: str,
+    gateway: Annotated[AnilistGateway, Depends(get_anilist_gateway)],
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    result = await login_with_anilist_callback(
+        db, gateway, code=code, state=state
+    )
 
     return RedirectResponse(
         url=f"{settings.mobile_deeplink}?token={result.app_jwt}",
