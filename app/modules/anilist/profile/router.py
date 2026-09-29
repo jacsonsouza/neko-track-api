@@ -6,25 +6,25 @@ from sqlalchemy.orm import Session
 
 from app.core.auth_dep import AuthClaims, get_claims
 from app.db.session import get_db
-from app.modules.anilist.profile.dto import UserProfileDTO
+from app.modules.anilist.profile.schemas import UserProfileResponse, ViewerResponse
 from app.modules.anilist.profile.service import get_profile, viewer
 from app.modules.auth.dependencies import get_current_anilist_access_token
 
 router = APIRouter(prefix="/api/v1/me", tags=["anilist", "profile"])
 
 
-@router.get("/viewer")
+@router.get("/viewer", response_model=ViewerResponse)
 async def get_viewer(
     claims: AuthClaims = Depends(get_claims), db: Session = Depends(get_db)
-):
+) -> ViewerResponse:
     return await viewer(db, user_id=claims.user_id)
 
 
-@router.get("/profile", response_model=UserProfileDTO)
+@router.get("/profile", response_model=UserProfileResponse)
 async def profile(
     anilist_access_token: Annotated[
         str, Depends(get_current_anilist_access_token)
     ] = None,
-) -> UserProfileDTO:
+) -> UserProfileResponse:
     async with httpx.AsyncClient(timeout=15) as http:
         return await get_profile(http, anilist_access_token)

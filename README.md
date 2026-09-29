@@ -38,11 +38,12 @@ Flutter app ──► Neko Track API ──► AniList (OAuth + GraphQL)
 Every module follows the same shape:
 
 ```
-router.py   # HTTP layer: APIRouter, Depends(get_claims), Depends(get_db)
-service.py  # business rules / AniList calls (async, httpx)
-repo.py     # pure database access (SQLAlchemy Session)
-dto/        # pydantic response models
-queries.py  # GraphQL operation strings
+router.py     # HTTP layer: APIRouter, response_model, Depends(get_claims) / Depends(get_db)
+service.py    # business rules + AniList calls (async, httpx)
+repo.py       # pure database access (SQLAlchemy Session)
+schemas.py    # public request/response schemas — what the API promises
+dto/          # AniList payload wrappers — parsed, never returned directly
+queries.py    # GraphQL operation strings
 ```
 
 Routers are registered in [`app/main.py`](app/main.py) — a router that is not `include_router`-ed simply does not exist (it 404s).
@@ -154,7 +155,7 @@ CI (`.github/workflows/ci.yml`) runs on pull requests to `main` and on pushes to
 
 ## API overview
 
-Full interactive documentation is served at **`/docs`** (Swagger UI) and `/redoc` once the server is up.
+Full interactive documentation is served at **`/docs`** (Swagger UI) and `/redoc` once the server is up. The machine-readable contract lives in [`docs/openapi.json`](docs/openapi.json).
 
 | Method | Path | Auth | Description |
 | :--- | :--- | :--- | :--- |
@@ -162,19 +163,32 @@ Full interactive documentation is served at **`/docs`** (Swagger UI) and `/redoc
 | GET | `/routes` | — | Debug listing of registered routes |
 | GET | `/auth/anilist/start` | — | Redirects to the AniList authorize URL (signed `state`) |
 | GET | `/auth/anilist/callback` | — | Exchanges `code` for a token, redirects to `nekotrack://auth?token=<jwt>` |
-| GET | `/auth/anilist/me` | Bearer | Current user claims + profile |
-| GET | `/anilist/anime/search` | Bearer | Anime search |
-| GET | `/anilist/viewer` · `/anilist/profile` | Bearer | Authenticated user's AniList profile |
-| GET | `/anilist/user/activities` | Bearer | User activity feed (paginated) |
-| POST | `/anilist/user/activities/{id}/like` | Bearer | Toggle like on an activity |
-| GET/POST | `/anilist/user/activities/{id}/replies` | Bearer | List / create replies |
-| DELETE | `/anilist/replies/{id}` | Bearer | Delete a reply |
-| POST | `/anilist/replies/{id}/toggle-like` | Bearer | Toggle like on a reply |
-| GET | `/anilist/user/{user_id}/watch-lists` · `/watching` | Bearer | User's AniList lists |
-| GET/PATCH | `/anilist/animes/{anime_id}` | Bearer | Anime details and progress updates |
-| PATCH | `/anilist/animes/{anime_id}/episodes` | Bearer | Increment watched episodes |
+| GET | `/auth/anilist/me` | Bearer | Current user: `id`, `anilist_id`, `name`, `exists` |
+| GET | `/api/v1/me/viewer` | Bearer | The AniList account behind the session |
+| GET | `/api/v1/me/profile` | Bearer | AniList profile with statistics |
+| GET | `/api/v1/me/activities` | Bearer | Activity feed (paginated) |
+| POST | `/api/v1/activities/{id}/like?type=` | Bearer | Toggle like (`type` is a `LikeableType`) |
+| GET | `/api/v1/activities/{id}/replies` | Bearer | List replies of an activity |
+| POST | `/api/v1/activities/{id}/replies` | Bearer | Create a reply — body `{"text": "..."}` |
+| DELETE | `/api/v1/replies/{id}` | Bearer | Delete a reply |
+| POST | `/api/v1/replies/{id}/toggle-like?type=` | Bearer | Toggle like on a reply |
+| GET | `/api/v1/animes?search=` | Bearer | Anime search (paginated) |
+| GET | `/api/v1/animes/{anime_id}` | Bearer | Anime details |
+| GET | `/api/v1/me/anime-list?status=` | Bearer | Media list filtered by `MediaListStatus` |
+| GET | `/api/v1/me/anime-list/available-to-watch` | Bearer | Current entries with an unwatched episode |
+| PATCH | `/api/v1/me/anime-list/{anime_id}` | Bearer | Update status, score, progress or dates |
 
 **Authentication:** everything except `/health`, `/routes`, and the two OAuth endpoints requires `Authorization: Bearer <app JWT>`; missing or invalid tokens return `401`. See [`app/core/auth_dep.py`](app/core/auth_dep.py).
+
+**Error contract:** every non-2xx response has the same body:
+
+```json
+{ "detail": "AniList account is not connected", "code": "FORBIDDEN", "errors": [] }
+```
+
+`code` is machine-readable (`UNAUTHORIZED`, `FORBIDDEN`, `VALIDATION_ERROR`, `UPSTREAM_ERROR`, …) so clients never parse `detail`; `errors[]` carries the field-level issues of a `422`.
+
+**Regenerating the contract:** after adding or renaming a route, request, response or enum, run `python scripts/export_openapi.py` and commit `docs/openapi.json` — `tests/integration/test_openapi_contract.py` fails while it is stale.
 
 **OAuth sequence:**
 
@@ -192,6 +206,8 @@ flutter run --dart-define=API_URL=http://localhost:8000   # iOS simulator / desk
 ```
 
 Route paths are mirrored in `lib/core/config/api_routes.dart` — when you add or rename an endpoint here, update that file too.
+
+> **Heads-up for the client:** the app still points at the pre-v1 paths and reads the raw AniList envelopes (`json['data']['ToggleLikeV2']`, `json['data']['Page']['activityReplies']`). This API answers under `/api/v1/...` with the unwrapped schemas documented above, so `api_routes.dart` and the data sources have to move together with any contract change.
 
 ## Getting help
 

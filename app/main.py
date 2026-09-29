@@ -1,9 +1,12 @@
+from typing import Literal
+
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
-from pydantic import ValidationError
+from pydantic import BaseModel
 from sqlalchemy import text
 
+from app.core.errors import ERROR_RESPONSES
+from app.core.exception_handlers import register_exception_handlers
 from app.db.session import SessionLocal
 from app.modules.anilist.activities.router import (
     activities_router,
@@ -15,25 +18,37 @@ from app.modules.anilist.profile.router import router as profile_router
 from app.modules.anilist.replies.router import router as replies_router
 from app.modules.auth.router import router as auth_router
 
-app = FastAPI(title="Neko Track Backend")
+app = FastAPI(title="Neko Track Backend", version="1.0.0")
 
-app.include_router(auth_router)
-app.include_router(profile_router)
-app.include_router(activities_router)
-app.include_router(my_activities_router)
-app.include_router(user_anime_lists_router)
-app.include_router(animes_router)
-app.include_router(replies_router)
+register_exception_handlers(app)
+
+app.include_router(auth_router, responses=ERROR_RESPONSES)
+app.include_router(profile_router, responses=ERROR_RESPONSES)
+app.include_router(activities_router, responses=ERROR_RESPONSES)
+app.include_router(my_activities_router, responses=ERROR_RESPONSES)
+app.include_router(user_anime_lists_router, responses=ERROR_RESPONSES)
+app.include_router(animes_router, responses=ERROR_RESPONSES)
+app.include_router(replies_router, responses=ERROR_RESPONSES)
 
 
-@app.get("/health")
-def health():
+class HealthResponse(BaseModel):
+    status: Literal["ok", "degraded"]
+    db: Literal["ok", "error"]
+
+
+class RouteInfo(BaseModel):
+    path: str
+    name: str
+
+
+@app.get("/health", response_model=HealthResponse)
+def health() -> HealthResponse:
     try:
         db = SessionLocal()
         db.execute(text("Select 1"))
-        return {"status": "ok", "db": "ok"}
+        return HealthResponse(status="ok", db="ok")
     except Exception:
-        return {"status": "degraded", "db": "error"}
+        return HealthResponse(status="degraded", db="error")
     finally:
         try:
             db.close()
@@ -41,16 +56,8 @@ def health():
             pass
 
 
-@app.exception_handler(ValidationError)
-async def validation_exception_handler(request, exc):
-    return JSONResponse(
-        status_code=502,
-        content={"detail": "Invalid AniList response"},
-    )
-
-
-@app.get("/routes")
-def listar_todas_as_rotas():
+@app.get("/routes", response_model=list[RouteInfo])
+def listar_todas_as_rotas() -> list[RouteInfo]:
     return [
-        {"path": r.path, "name": r.name} for r in app.routes if isinstance(r, APIRoute)
+        RouteInfo(path=r.path, name=r.name) for r in app.routes if isinstance(r, APIRoute)
     ]

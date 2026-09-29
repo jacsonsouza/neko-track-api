@@ -1,10 +1,12 @@
 import httpx
 
-from app.modules.anilist.activities.dto.paginated_activities_dto import (
-    UserActivitiesDataDTO,
-)
 from app.modules.anilist.activities.queries import TOGGLE_LIKE, USER_ACTIVITIES
+from app.modules.anilist.activities.schemas import (
+    ActivitiesResponse,
+    ToggleLikeResponse,
+)
 from app.modules.anilist.client import AnilistClient
+from app.modules.anilist.enums import LikeableType
 
 
 async def get_user_activities(
@@ -13,7 +15,7 @@ async def get_user_activities(
     user_id: int,
     page: int = 1,
     per_page: int = 10,
-) -> UserActivitiesDataDTO:
+) -> ActivitiesResponse:
     client = AnilistClient(http)
 
     data = await client.graphql(
@@ -26,16 +28,21 @@ async def get_user_activities(
         },
     )
 
-    return UserActivitiesDataDTO.from_json(data["data"])
+    return ActivitiesResponse.from_json(data["data"])
 
 
 async def toggle_activity_like(
-    http: httpx.AsyncClient, access_token: str, activity_id: int, type: str
-):
+    http: httpx.AsyncClient,
+    access_token: str,
+    activity_id: int,
+    type: LikeableType,
+) -> ToggleLikeResponse:
     client = AnilistClient(http)
 
-    return await client.graphql(
+    payload = await client.graphql(
         access_token=access_token,
         query=TOGGLE_LIKE,
-        variables={"id": activity_id, "type": type},
+        variables={"id": activity_id, "type": type.value},
     )
+
+    return ToggleLikeResponse.from_graphql(payload)
