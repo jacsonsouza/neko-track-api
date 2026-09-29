@@ -25,3 +25,7 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# AI Agents
+.agents
+AGENTS.md
