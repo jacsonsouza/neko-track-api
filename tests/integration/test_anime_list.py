@@ -66,6 +66,10 @@ def test_anime_list_uses_the_authenticated_users_anilist_token(
 
     assert response.status_code == 200
 
+    body = response.json()
+    assert body["pageInfo"] == {"perPage": 10, "currentPage": 1, "hasNextPage": False}
+    assert body["entries"] == []
+
 
 def test_anime_list_requires_a_connected_anilist_account(client):
     user = UserFactory.create(anilist_id=303)
@@ -79,6 +83,63 @@ def test_anime_list_requires_a_connected_anilist_account(client):
 
     assert response.status_code == 403
     assert response.json()["detail"] == "AniList account is not connected"
+
+
+@respx.mock
+def test_available_to_watch_returns_public_entries_only(
+    client, make_authenticated_anilist_user
+):
+    authenticated_user: AuthenticatedAniListUser = make_authenticated_anilist_user(
+        anilist_id=606,
+        access_token="anilist-token-for-available",
+    )
+
+    payload = {
+        "data": {
+            "Page": {
+                "mediaList": [
+                    {
+                        "status": "CURRENT",
+                        "progress": 3,
+                        "media": {
+                            "id": 1,
+                            "meanScore": 82,
+                            "episodes": 12,
+                            "nextAiringEpisode": {
+                                "id": 900,
+                                "airingAt": 1_700_000_000,
+                                "timeUntilAiring": 100,
+                                "episode": 6,
+                            },
+                            "title": {"romaji": "Frieren", "userPreferred": "Frieren"},
+                            "coverImage": {"extraLarge": "img", "color": "#fff"},
+                        },
+                    }
+                ]
+            }
+        }
+    }
+
+    respx.post(ANILIST_GRAPHQL_URL).mock(
+        return_value=httpx.Response(200, json=payload)
+    )
+
+    response = client.get(
+        "/api/v1/me/anime-list/available-to-watch",
+        headers=authenticated_user.headers,
+    )
+
+    assert response.status_code == 200
+
+    body = response.json()
+    assert list(body) == ["entries"]
+
+    entry = body["entries"][0]
+    assert entry["status"] == "CURRENT"
+    assert entry["progress"] == 3
+    assert entry["media"]["meanScore"] == 82
+    assert entry["media"]["title"]["userPreferred"] == "Frieren"
+    assert entry["media"]["nextAiringEpisode"]["episode"] == 6
 
 
 @respx.mock
