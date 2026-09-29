@@ -3,14 +3,17 @@ from typing import Annotated
 import httpx
 from fastapi import APIRouter, Depends, Query
 
-from app.modules.anilist.anime_details.dto.anime_resource import AnimeDetailsDTO
+from app.modules.anilist.anime_details.schemas import (
+    AnimeDetailsResponse,
+    AnimeSearchResponse,
+)
 from app.modules.anilist.anime_details.service import get_anime_details, get_animes
 from app.modules.auth.dependencies import get_current_anilist_access_token
 
 animes_router = APIRouter(prefix="/api/v1/animes", tags=["anilist", "details"])
 
 
-@animes_router.get("")
+@animes_router.get("", response_model=AnimeSearchResponse)
 async def animes(
     search: str,
     page: int = Query(1, ge=1),
@@ -18,17 +21,17 @@ async def animes(
     anilist_access_token: Annotated[
         str, Depends(get_current_anilist_access_token)
     ] = None,
-):
+) -> AnimeSearchResponse:
     async with httpx.AsyncClient(timeout=15) as http:
         return await get_animes(http, anilist_access_token, search, page, per_page)
 
 
-@animes_router.get("/{anime_id}")
+@animes_router.get("/{anime_id}", response_model=AnimeDetailsResponse)
 async def anime_details(
     anime_id: int,
     anilist_access_token: Annotated[
         str, Depends(get_current_anilist_access_token)
     ] = None,
-) -> AnimeDetailsDTO:
+) -> AnimeDetailsResponse:
     async with httpx.AsyncClient(timeout=15) as http:
         return await get_anime_details(http, anilist_access_token, anime_id)

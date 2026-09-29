@@ -1,16 +1,42 @@
+"""Schemas of the ``anime-list`` feature, split into requests and responses.
+
+The AniList payload models used to filter entries live in
+``models/anilist_media_list_response.py`` and are never exposed directly —
+routers always answer with the response schemas below.
+"""
+
 from datetime import date
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.modules.anilist.anime_details.dto.anime_progress_dto import FuzzyDateDTO
-from app.modules.anilist.enums import AnimeListStatus
+from app.core.schemas import PageInfoResponse
+from app.modules.anilist.enums import MediaListStatus
+
+
+# --------------------------------------------------------------------------
+# Requests
+# --------------------------------------------------------------------------
+class FuzzyDateDTO(BaseModel):
+    """AniList ``FuzzyDate`` built from the ``date`` fields of a request."""
+
+    year: int | None = None
+    month: int | None = None
+    day: int | None = None
+
+    @classmethod
+    def from_date(cls, dt: date | None) -> dict | None:
+        if not dt:
+            return None
+        return {"year": dt.year, "month": dt.month, "day": dt.day}
 
 
 class UpdateAnimeListEntryRequest(BaseModel):
+    """Body of ``PATCH /api/v1/me/anime-list/{anime_id}``."""
+
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
-    status: AnimeListStatus | None = None
+    status: MediaListStatus | None = None
     score: float | None = Field(default=None, ge=0, le=100)
     progress: int | None = Field(default=None, ge=0)
     started_at: date | None = Field(default=None, alias="startedAt")
@@ -46,9 +72,86 @@ class UpdateAnimeListEntryRequest(BaseModel):
         return variables
 
 
+# --------------------------------------------------------------------------
+# Responses
+# --------------------------------------------------------------------------
+class MediaTitleResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    romaji: str | None = None
+    english: str | None = None
+    user_preferred: str | None = Field(default=None, alias="userPreferred")
+
+
+class MediaCoverImageResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    extra_large: str | None = Field(default=None, alias="extraLarge")
+    large: str | None = None
+    medium: str | None = None
+    color: str | None = None
+
+
+class AiringEpisodeResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+    airing_at: int = Field(alias="airingAt")
+    time_until_airing: int = Field(alias="timeUntilAiring")
+    episode: int
+
+
+class AnimeListMediaResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+    title: MediaTitleResponse
+    mean_score: float | None = Field(default=None, alias="meanScore")
+    episodes: int | None = None
+    cover_image: MediaCoverImageResponse | None = Field(default=None, alias="coverImage")
+    next_airing_episode: AiringEpisodeResponse | None = Field(
+        default=None, alias="nextAiringEpisode"
+    )
+
+
+class AnimeListEntryItem(BaseModel):
+    """One entry of a media list as returned by the list endpoints."""
+
+    status: MediaListStatus
+    progress: int
+    media: AnimeListMediaResponse
+
+
+class AnimeListResponse(BaseModel):
+    """Paginated media list of the authenticated user."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    page_info: PageInfoResponse | None = Field(default=None, alias="pageInfo")
+    entries: list[AnimeListEntryItem]
+
+    @classmethod
+    def from_graphql(cls, payload: dict) -> "AnimeListResponse":
+        page = (payload.get("data") or {}).get("Page") or {}
+        return cls(
+            page_info=page.get("pageInfo"),
+            entries=page.get("mediaList") or [],
+        )
+
+
+class AvailableToWatchResponse(BaseModel):
+    """Entries of the current list that already have an unwatched episode."""
+
+    entries: list[AnimeListEntryItem]
+
+
 class AnimeListEntryResponse(BaseModel):
+    """Result of updating a media list entry (``SaveMediaListEntry``)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
     id: int
     media_id: int = Field(alias="mediaId")
-    status: AnimeListStatus
+    status: MediaListStatus
     score: float | None
     progress: int
