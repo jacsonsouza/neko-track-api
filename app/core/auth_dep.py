@@ -1,27 +1,54 @@
 from dataclasses import dataclass
 
-from fastapi import Header, HTTPException
-from jose import JWTError, jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import ExpiredSignatureError, JWTError, jwt
 
 from app.core.config import settings
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 
 
 @dataclass(frozen=True)
 class AuthClaims:
     user_id: int
-    anilist_id: int
+    anilist_id: int | None
 
 
-def get_claims(authorization: str | None = Header(default=None)) -> AuthClaims:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(401, "Missing bearer token")
-
-    token = authorization.removeprefix("Bearer ").strip()
-
+def _decode_token(token: str) -> dict:
     try:
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
-        return AuthClaims(
-            user_id=int(payload["sub"]), anilist_id=int(payload["anilist_id"])
+        return jwt.decode(
+            token, settings.jwt_secret, algorithms=["HS256"], issuer=settings.jwt_issuer
         )
-    except (JWTError, KeyError, ValueError):
-        raise HTTPException(401, "Invalid token")
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired.",
+            headers={"WWW-Authenticate": "Bearer error='token_expired'"},
+        )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token.",
+            headers={"WWW-Authenticate": "Bearer error='invalid_token'"},
+        )
+
+
+def get_claims(token: str | None = Depends(oauth2_scheme)) -> AuthClaims:
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or malformed authorization header.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    payload = _decode_token(token)
+
+    return AuthClaims(
+        user_id=int(payload["sub"]),
+        anilist_id=(
+            int(payload["anilist_id"])
+            if payload.get("anilist_id") is not None
+            else None
+        ),
+    )

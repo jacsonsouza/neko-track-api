@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 
 import pytest
 from dotenv import load_dotenv
@@ -8,12 +9,52 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.db.base import Base
+from app.db.models.user import User
 from app.db.session import get_db
+from app.core.crypto import encrypt_token
+from app.core.security import create_app_jwt
 from app.main import app
+from app.modules.anilist.gateway import get_anilist_gateway
 from tests.factories.anilist_token_factory import AnilistTokenFactory
 from tests.factories.user_factory import UserFactory
+from tests.fakes.anilist_gateway import FakeAnilistGateway
 
 load_dotenv()
+
+
+@dataclass(frozen=True)
+class AuthenticatedAniListUser:
+    user: User
+    access_token: str
+    headers: dict[str, str]
+
+
+@pytest.fixture
+def make_authenticated_anilist_user():
+    def _make(
+        *,
+        anilist_id: int,
+        access_token: str,
+        name: str = "Test user",
+    ) -> AuthenticatedAniListUser:
+        anilist_token = AnilistTokenFactory.create(
+            user__name=name,
+            user__anilist_id=anilist_id,
+            access_token_encrypted=encrypt_token(access_token),
+        )
+
+        app_jwt = create_app_jwt(
+            user_id=anilist_token.user.id,
+            anilist_id=anilist_token.user.anilist_id,
+        )
+
+        return AuthenticatedAniListUser(
+            user=anilist_token.user,
+            access_token=access_token,
+            headers={"Authorization": f"Bearer {app_jwt}"},
+        )
+
+    return _make
 
 
 @pytest.fixture(scope="session")
@@ -38,7 +79,20 @@ def db_session(test_db_url):
 
 
 @pytest.fixture()
-def client(db_session):
+def anilist_gateway():
+    """Replaces the lifespan gateway with a fake for the whole test.
+
+    Every test using ``client`` gets a fresh fake, so calls never leak between
+    tests; ask for this fixture to configure answers or assert on calls.
+    """
+    fake = FakeAnilistGateway()
+    app.dependency_overrides[get_anilist_gateway] = lambda: fake
+    yield fake
+    app.dependency_overrides.pop(get_anilist_gateway, None)
+
+
+@pytest.fixture()
+def client(db_session, anilist_gateway):
     def _override_get_db():
         try:
             yield db_session

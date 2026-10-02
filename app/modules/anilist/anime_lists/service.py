@@ -1,50 +1,83 @@
-import httpx
-
-from app.modules.anilist.anime_lists.models.anilist_response_model import (
-    AniListResponse,
+from app.modules.anilist.anime_lists.models.anilist_media_list_response import (
+    AniListMediaListResponse,
 )
 from app.modules.anilist.anime_lists.queries import (
-    USER_ANIME_LISTS,
-    USER_WATCHING_ANIME_LISTS,
+    ANIME_LIST_ENTRIES,
+    AVAILABLE_TO_WATCH_ENTRIES,
+    SAVE_ANIME_LIST_ENTRY,
 )
-from app.modules.anilist.client import AnilistClient
+from app.modules.anilist.anime_lists.schemas import (
+    AnimeListEntryItem,
+    AnimeListEntryResponse,
+    AnimeListResponse,
+    AvailableToWatchResponse,
+    UpdateAnimeListEntryRequest,
+)
+from app.modules.anilist.enums import MediaListStatus
+from app.modules.anilist.gateway import AnilistGateway
 
 
-async def get_user_anime_lists(
-    http: httpx.AsyncClient,
+async def anime_list_entries(
+    gateway: AnilistGateway,
     access_token: str,
-    user_id: int,
-    status: str,
+    anilist_user_id: int,
+    list_status: MediaListStatus,
     page: int = 1,
     per_page: int = 10,
-):
-    client = AnilistClient(http)
-
-    return await client.graphql(
+) -> AnimeListResponse:
+    data = await gateway.graphql(
         access_token=access_token,
-        query=USER_ANIME_LISTS,
+        query=ANIME_LIST_ENTRIES,
         variables={
-            "userId": user_id,
-            "status": status,
+            "userId": anilist_user_id,
+            "status": list_status.value,
             "page": page,
             "perPage": per_page,
         },
     )
 
+    return AnimeListResponse.from_graphql(data)
 
-async def get_user_watching_list(
-    http: httpx.AsyncClient,
+
+async def available_to_watch_entries(
+    gateway: AnilistGateway,
     access_token: str,
-    user_id: int,
-) -> AniListResponse:
-    client = AnilistClient(http)
-
-    json = await client.graphql(
+    anilist_user_id: int,
+) -> AvailableToWatchResponse:
+    data = await gateway.graphql(
         access_token=access_token,
-        query=USER_WATCHING_ANIME_LISTS,
+        query=AVAILABLE_TO_WATCH_ENTRIES,
         variables={
-            "userId": user_id,
+            "userId": anilist_user_id,
         },
     )
 
-    return AniListResponse.from_json(json)
+    # Payload model keeps the "available to watch" domain rules; the router
+    # answers with the public schema only.
+    response = AniListMediaListResponse.from_json(data)
+    entries = [
+        AnimeListEntryItem.model_validate(entry.model_dump(by_alias=True))
+        for entry in response.get_available_to_watch_entries()
+    ]
+
+    return AvailableToWatchResponse(entries=entries)
+
+
+async def update_anime_list_entry(
+    gateway: AnilistGateway,
+    access_token: str,
+    anime_id: int,
+    data: UpdateAnimeListEntryRequest,
+) -> AnimeListEntryResponse:
+    variables = {
+        "mediaId": anime_id,
+        **data.to_anilist_variables(),
+    }
+
+    payload = await gateway.graphql(
+        access_token=access_token,
+        query=SAVE_ANIME_LIST_ENTRY,
+        variables=variables,
+    )
+
+    return AnimeListEntryResponse.model_validate(payload["SaveMediaListEntry"])

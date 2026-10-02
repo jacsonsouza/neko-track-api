@@ -1,28 +1,32 @@
-import httpx
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.auth_dep import AuthClaims, get_claims
 from app.db.session import get_db
-from app.modules.anilist.profile.dto import UserProfileDTO
+from app.modules.anilist.gateway import AnilistGateway, get_anilist_gateway
+from app.modules.anilist.profile.schemas import UserProfileResponse, ViewerResponse
 from app.modules.anilist.profile.service import get_profile, viewer
-from app.modules.auth.token_repo import get_anilist_access_token_for_user
+from app.modules.auth.dependencies import get_current_anilist_access_token
 
-router = APIRouter(prefix="/anilist", tags=["anilist", "profile"])
+router = APIRouter(prefix="/api/v1/me", tags=["anilist", "profile"])
 
 
-@router.get("/viewer")
+@router.get("/viewer", response_model=ViewerResponse)
 async def get_viewer(
-    claims: AuthClaims = Depends(get_claims), db: Session = Depends(get_db)
-):
-    return await viewer(db, user_id=claims.user_id)
+    gateway: Annotated[AnilistGateway, Depends(get_anilist_gateway)],
+    claims: AuthClaims = Depends(get_claims),
+    db: Session = Depends(get_db),
+) -> ViewerResponse:
+    return await viewer(gateway, db, user_id=claims.user_id)
 
 
-@router.get("/profile", response_model=UserProfileDTO)
+@router.get("/profile", response_model=UserProfileResponse)
 async def profile(
-    claims: AuthClaims = Depends(get_claims), db=Depends(get_db)
-) -> UserProfileDTO:
-    access_token = get_anilist_access_token_for_user(db, claims.user_id)
-
-    async with httpx.AsyncClient(timeout=15) as http:
-        return await get_profile(http, access_token)
+    gateway: Annotated[AnilistGateway, Depends(get_anilist_gateway)],
+    anilist_access_token: Annotated[
+        str, Depends(get_current_anilist_access_token)
+    ] = None,
+) -> UserProfileResponse:
+    return await get_profile(gateway, anilist_access_token)

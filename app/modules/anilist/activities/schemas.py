@@ -1,6 +1,26 @@
+"""Public response and request schemas for the activities feature.
+
+These models define what the API promises to its clients. The nested ``*DTO``
+classes mirror the AniList fields we choose to expose and double as the parser
+for the payload coming from the upstream query.
+"""
+
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.core.schemas import PageInfoResponse
+from app.modules.anilist.replies.schemas import (
+    ActivityReplyResponse,
+    CreateActivityReplyRequest,
+)
+
+__all__ = [
+    "ActivitiesResponse",
+    "CreateActivityReplyRequest",
+    "ActivityReplyResponse",
+    "ToggleLikeResponse",
+]
 
 
 class ImageDTO(BaseModel):
@@ -96,20 +116,8 @@ ActivityDTO = Annotated[
 ]
 
 
-class PageInfoDTO(BaseModel):
-    per_page: int = Field(default=10, alias="perPage")
-    current_page: int = Field(default=1, alias="currentPage")
-    has_next_page: bool = Field(default=False, alias="hasNextPage")
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    @classmethod
-    def from_json(cls, data: dict) -> "PageInfoDTO":
-        return cls.model_validate(data)
-
-
 class PageDTO(BaseModel):
-    page_info: PageInfoDTO = Field(alias="pageInfo")
+    page_info: PageInfoResponse = Field(alias="pageInfo")
     activities: list[ActivityDTO]
 
     model_config = ConfigDict(populate_by_name=True)
@@ -119,19 +127,31 @@ class PageDTO(BaseModel):
         return cls.model_validate(data)
 
 
-class UserActivitiesDataDTO(BaseModel):
+class ActivitiesResponse(BaseModel):
+    """Paginated activity feed of the authenticated AniList user."""
+
     page: PageDTO = Field(alias="Page")
 
     model_config = ConfigDict(populate_by_name=True)
 
     @classmethod
-    def from_json(cls, data: dict) -> "UserActivitiesDataDTO":
+    def from_json(cls, data: dict) -> "ActivitiesResponse":
         return cls.model_validate(data)
 
 
-class UserActivitiesResponseDTO(BaseModel):
-    data: UserActivitiesDataDTO
+class ToggleLikeResponse(BaseModel):
+    """Result of liking/unliking an activity or a reply."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+    like_count: int = Field(default=0, alias="likeCount")
+    is_liked: bool = Field(default=False, alias="isLiked")
 
     @classmethod
-    def from_json(cls, data: dict) -> "UserActivitiesResponseDTO":
-        return cls.model_validate(data)
+    def from_graphql(
+        cls, data: dict, *, key: str = "ToggleLikeV2"
+    ) -> "ToggleLikeResponse":
+        """Build from the GraphQL ``data`` object (gateway already unwrapped)."""
+        node = data.get(key) or {}
+        return cls.model_validate(node)

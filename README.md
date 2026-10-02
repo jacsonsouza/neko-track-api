@@ -25,7 +25,7 @@ Backend of **Neko Track**, the anime tracking app. It authenticates users throug
 - **Tokens are encrypted at rest** — AniList access tokens are stored with Fernet (`TOKEN_ENC_KEY`) in `anilist_tokens`, never in plaintext and never logged.
 - **GraphQL proxy with local cache of identity** — search, profile, activity, lists, and details requests go through typed services and DTOs, so the client gets a stable JSON contract even if AniList changes.
 - **Stateless-friendly and small** — FastAPI + SQLAlchemy 2 (typed mappings) + Alembic, with a `router → service → repo` convention that keeps modules independent.
-- **Testable by design** — external HTTP is always mocked with `respx`; the suite runs in CI against a throwaway Postgres 18 database.
+- **Testable by design** — integration tests replace the AniList gateway with a fake (only the gateway's own HTTP layer is mocked with `respx`); the suite runs in CI against a throwaway Postgres 18 database.
 
 ## How it works
 
@@ -38,14 +38,17 @@ Flutter app ──► Neko Track API ──► AniList (OAuth + GraphQL)
 Every module follows the same shape:
 
 ```
-router.py   # HTTP layer: APIRouter, Depends(get_claims), Depends(get_db)
-service.py  # business rules / AniList calls (async, httpx)
-repo.py     # pure database access (SQLAlchemy Session)
-dto/        # pydantic response models
-queries.py  # GraphQL operation strings
+router.py     # HTTP layer: APIRouter, response_model, Depends(get_claims) / Depends(get_db)
+service.py    # business rules; calls the AniList gateway (never httpx)
+repo.py       # pure database access (SQLAlchemy Session)
+schemas.py    # public request/response schemas — what the API promises
+dto/          # AniList payload wrappers — parsed, never returned directly
+queries.py    # GraphQL operation strings
 ```
 
 Routers are registered in [`app/main.py`](app/main.py) — a router that is not `include_router`-ed simply does not exist (it 404s).
+
+The transport sits outside that per-feature shape: [`app/modules/anilist/gateway.py`](app/modules/anilist/gateway.py) owns the single `httpx` client created by the application lifespan, and applies one policy for timeouts, `429`/`Retry-After` and provider errors (`app/modules/anilist/errors.py`). Routes receive it through `Depends(get_anilist_gateway)`; no route or service ever builds an `httpx.AsyncClient`.
 
 ## Getting started
 
@@ -119,6 +122,8 @@ All settings live in [`app/core/config.py`](app/core/config.py) and are read fro
 | :--- | :--- | :--- |
 | `ANILIST_CLIENT_ID` | Client ID of your AniList OAuth app | `1234` |
 | `ANILIST_CLIENT_SECRET` | Client secret of your AniList OAuth app | `xxxx` |
+| `ANILIST_TIMEOUT_SECONDS` | Read/write timeout of the shared AniList client | `15` |
+| `ANILIST_CONNECT_TIMEOUT_SECONDS` | Connect timeout of the shared AniList client | `5` |
 | `JWT_SECRET` | HS256 secret for app JWTs | random 48-byte URL-safe string |
 | `TOKEN_ENC_KEY` | Fernet key used to encrypt AniList tokens | `Fernet.generate_key()` |
 | `APP_BASE_URL` | Public base URL of this API (used as OAuth `redirect_uri`) | `http://localhost:8000` |
@@ -147,14 +152,14 @@ pytest -q
 
 Conventions enforced by the tests:
 
-- external HTTP is mocked with `respx` — **no real call to `anilist.co` ever happens**;
+- integration tests inject `FakeAnilistGateway` ([`tests/fakes`](tests/fakes)) and assert on the calls it recorded — **no real call to `anilist.co` ever happens**; `respx` mocks the transport only inside the gateway's own tests (`tests/unit/test_anilist_gateway.py`);
 - objects are built with `UserFactory` / `AnilistTokenFactory` (registered in [`tests/conftest.py`](tests/conftest.py)).
 
 CI (`.github/workflows/ci.yml`) runs on pull requests to `main` and on pushes to `production`: Postgres 18 service → `pip install -r requirements.txt` → `alembic upgrade head` → `pytest -q`.
 
 ## API overview
 
-Full interactive documentation is served at **`/docs`** (Swagger UI) and `/redoc` once the server is up.
+Full interactive documentation is served at **`/docs`** (Swagger UI) and `/redoc` once the server is up. The machine-readable contract lives in [`docs/openapi.json`](docs/openapi.json).
 
 | Method | Path | Auth | Description |
 | :--- | :--- | :--- | :--- |
@@ -162,19 +167,34 @@ Full interactive documentation is served at **`/docs`** (Swagger UI) and `/redoc
 | GET | `/routes` | — | Debug listing of registered routes |
 | GET | `/auth/anilist/start` | — | Redirects to the AniList authorize URL (signed `state`) |
 | GET | `/auth/anilist/callback` | — | Exchanges `code` for a token, redirects to `nekotrack://auth?token=<jwt>` |
-| GET | `/auth/anilist/me` | Bearer | Current user claims + profile |
-| GET | `/anilist/anime/search` | Bearer | Anime search |
-| GET | `/anilist/viewer` · `/anilist/profile` | Bearer | Authenticated user's AniList profile |
-| GET | `/anilist/user/activities` | Bearer | User activity feed (paginated) |
-| POST | `/anilist/user/activities/{id}/like` | Bearer | Toggle like on an activity |
-| GET/POST | `/anilist/user/activities/{id}/replies` | Bearer | List / create replies |
-| DELETE | `/anilist/replies/{id}` | Bearer | Delete a reply |
-| POST | `/anilist/replies/{id}/toggle-like` | Bearer | Toggle like on a reply |
-| GET | `/anilist/user/{user_id}/watch-lists` · `/watching` | Bearer | User's AniList lists |
-| GET/PATCH | `/anilist/animes/{anime_id}` | Bearer | Anime details and progress updates |
-| PATCH | `/anilist/animes/{anime_id}/episodes` | Bearer | Increment watched episodes |
+| GET | `/auth/anilist/me` | Bearer | Current user: `id`, `anilist_id`, `name`, `exists` |
+| GET | `/api/v1/me/viewer` | Bearer | The AniList account behind the session |
+| GET | `/api/v1/me/profile` | Bearer | AniList profile with statistics |
+| GET | `/api/v1/me/activities` | Bearer | Activity feed (paginated) |
+| POST | `/api/v1/activities/{id}/like?type=` | Bearer | Toggle like (`type` is a `LikeableType`) |
+| GET | `/api/v1/activities/{id}/replies` | Bearer | List replies of an activity |
+| POST | `/api/v1/activities/{id}/replies` | Bearer | Create a reply — body `{"text": "..."}` |
+| DELETE | `/api/v1/replies/{id}` | Bearer | Delete a reply |
+| POST | `/api/v1/replies/{id}/toggle-like?type=` | Bearer | Toggle like on a reply |
+| GET | `/api/v1/animes?search=` | Bearer | Anime search (paginated) |
+| GET | `/api/v1/animes/{anime_id}` | Bearer | Anime details |
+| GET | `/api/v1/me/anime-list?status=` | Bearer | Media list filtered by `MediaListStatus` |
+| GET | `/api/v1/me/anime-list/available-to-watch` | Bearer | Current entries with an unwatched episode |
+| PATCH | `/api/v1/me/anime-list/{anime_id}` | Bearer | Update status, score, progress or dates |
 
 **Authentication:** everything except `/health`, `/routes`, and the two OAuth endpoints requires `Authorization: Bearer <app JWT>`; missing or invalid tokens return `401`. See [`app/core/auth_dep.py`](app/core/auth_dep.py).
+
+**Error contract:** every non-2xx response has the same body:
+
+```json
+{ "detail": "AniList account is not connected", "code": "FORBIDDEN", "errors": [] }
+```
+
+`code` is machine-readable (`UNAUTHORIZED`, `FORBIDDEN`, `VALIDATION_ERROR`, `RATE_LIMITED`, `UPSTREAM_ERROR`, …) so clients never parse `detail`; `errors[]` carries the field-level issues of a `422`.
+
+Upstream failures are normalised by the gateway into that same body: `429` (AniList rate limited — the response carries a `Retry-After` header), `502` (AniList rejected the call or answered something unusable) and `504` (AniList did not answer within `ANILIST_TIMEOUT_SECONDS`).
+
+**Regenerating the contract:** after adding or renaming a route, request, response or enum, run `python scripts/export_openapi.py` and commit `docs/openapi.json` — `tests/integration/test_openapi_contract.py` fails while it is stale.
 
 **OAuth sequence:**
 
@@ -193,6 +213,8 @@ flutter run --dart-define=API_URL=http://localhost:8000   # iOS simulator / desk
 
 Route paths are mirrored in `lib/core/config/api_routes.dart` — when you add or rename an endpoint here, update that file too.
 
+> **Heads-up for the client:** the app still points at the pre-v1 paths and reads the raw AniList envelopes (`json['data']['ToggleLikeV2']`, `json['data']['Page']['activityReplies']`). This API answers under `/api/v1/...` with the unwrapped schemas documented above, so `api_routes.dart` and the data sources have to move together with any contract change.
+
 ## Getting help
 
 - **Interactive API docs:** `http://localhost:8000/docs` (generated from the code — the fastest reference).
@@ -208,7 +230,7 @@ Contributions are welcome:
 
 1. Fork and create a feature branch — never commit directly to `main`, `development`, or `production`.
 2. Follow the module layout above and keep secrets in `.env` only.
-3. Add or update tests (`pytest -q` must pass; mock AniList with `respx`).
+3. Add or update tests (`pytest -q` must pass; fake the gateway in integration tests — `respx` only in the gateway's unit tests).
 4. Open a pull request against `main` and make sure CI is green.
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`…).

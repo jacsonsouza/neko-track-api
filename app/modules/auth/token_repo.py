@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 
 from app.core.crypto import decrypt_token
 from app.db.models.anilist_token import AnilistToken
-from app.db.models.user import User
 
 
 def get_by_user_id(db: Session, user_id: int) -> AnilistToken | None:
