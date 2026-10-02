@@ -131,8 +131,9 @@ class AnimeListResponse(BaseModel):
     entries: list[AnimeListEntryItem]
 
     @classmethod
-    def from_graphql(cls, payload: dict) -> "AnimeListResponse":
-        page = (payload.get("data") or {}).get("Page") or {}
+    def from_graphql(cls, data: dict) -> "AnimeListResponse":
+        """Build from the GraphQL ``data`` object (gateway already unwrapped)."""
+        page = data.get("Page") or {}
         return cls(
             page_info=page.get("pageInfo"),
             entries=page.get("mediaList") or [],

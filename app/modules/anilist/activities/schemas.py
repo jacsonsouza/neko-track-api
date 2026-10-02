@@ -150,7 +150,8 @@ class ToggleLikeResponse(BaseModel):
 
     @classmethod
     def from_graphql(
-        cls, payload: dict, *, key: str = "ToggleLikeV2"
+        cls, data: dict, *, key: str = "ToggleLikeV2"
     ) -> "ToggleLikeResponse":
-        node = (payload.get("data") or {}).get(key) or {}
+        """Build from the GraphQL ``data`` object (gateway already unwrapped)."""
+        node = data.get(key) or {}
         return cls.model_validate(node)

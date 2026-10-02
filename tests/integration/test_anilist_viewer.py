@@ -1,27 +1,9 @@
-import httpx
-import respx
-
-from app.modules.anilist.client import ANILIST_GRAPHQL_URL, ANILIST_OAUTH_TOKEN_URL
-
-
-@respx.mock
 def test_viewer_requires_auth(client):
     r = client.get("/api/v1/me/viewer")
     assert r.status_code == 401
 
 
-@respx.mock
-def test_viewer_returns_data_using_saved_token(client):
-    respx.post(ANILIST_OAUTH_TOKEN_URL).mock(
-        return_value=httpx.Response(200, json={"access_token": "token123"})
-    )
-
-    respx.post(ANILIST_GRAPHQL_URL).mock(
-        return_value=httpx.Response(
-            200, json={"data": {"Viewer": {"id": 99, "name": "Jacson"}}}
-        )
-    )
-
+def test_viewer_returns_data_using_saved_token(client, anilist_gateway):
     r1 = client.get("/auth/anilist/start", follow_redirects=False)
     state = r1.headers["location"].split("state=")[1]
 
@@ -39,3 +21,7 @@ def test_viewer_returns_data_using_saved_token(client):
 
     assert data["id"] == 99
     assert data["name"] == "Jacson"
+
+    # The stored AniList token (not the app JWT) is what reaches the gateway.
+    viewer_calls = [call for call in anilist_gateway.calls if call.method == "viewer"]
+    assert viewer_calls[-1].access_token == anilist_gateway.access_token

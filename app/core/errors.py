@@ -17,6 +17,7 @@ class ErrorCode(str, Enum):
     FORBIDDEN = "FORBIDDEN"
     NOT_FOUND = "NOT_FOUND"
     VALIDATION_ERROR = "VALIDATION_ERROR"
+    RATE_LIMITED = "RATE_LIMITED"
     INTERNAL_ERROR = "INTERNAL_ERROR"
     UPSTREAM_ERROR = "UPSTREAM_ERROR"
 
@@ -28,6 +29,7 @@ ERROR_CODE_BY_STATUS: dict[int, ErrorCode] = {
     404: ErrorCode.NOT_FOUND,
     409: ErrorCode.BAD_REQUEST,
     422: ErrorCode.VALIDATION_ERROR,
+    429: ErrorCode.RATE_LIMITED,
     500: ErrorCode.INTERNAL_ERROR,
     502: ErrorCode.UPSTREAM_ERROR,
     503: ErrorCode.UPSTREAM_ERROR,
@@ -64,5 +66,10 @@ ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     401: {"model": ErrorResponse, "description": "Missing or invalid app JWT"},
     403: {"model": ErrorResponse, "description": "AniList account not connected"},
     422: {"model": ErrorResponse, "description": "Request validation error"},
+    429: {
+        "model": ErrorResponse,
+        "description": "AniList rate limit exceeded (Retry-After header)",
+    },
     502: {"model": ErrorResponse, "description": "Invalid AniList response"},
+    504: {"model": ErrorResponse, "description": "AniList request timed out"},
 }

@@ -58,7 +58,8 @@ class AniListMediaListResponse(BaseModel):
 
     @classmethod
     def from_json(cls, raw_data: dict) -> "AniListMediaListResponse":
-        page_data = raw_data.get("data", {}).get("Page", {})
+        # `raw_data` is the GraphQL `data` object, already unwrapped by the gateway.
+        page_data = raw_data.get("Page", {})
         return cls(**page_data)
 
     def get_available_to_watch_entries(self) -> List[AnimeListEntry]:

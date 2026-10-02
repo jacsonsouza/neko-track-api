@@ -1,10 +1,5 @@
-import httpx
-import respx
-from fastapi.testclient import TestClient
-
 from app.core.oauth_state import create_state
-from app.main import app
-from app.modules.anilist.client import ANILIST_GRAPHQL_URL, ANILIST_OAUTH_TOKEN_URL
+from app.modules.anilist.errors import AnilistHttpError, AnilistResponseError
 
 
 def test_start_redirects_to_anilist(client):
@@ -28,19 +23,7 @@ def test_callback_rejects_invalid_state(client):
     assert r.status_code == 400
 
 
-@respx.mock
-def test_callback_exchange_code_and_redirects_to_deeplink(monkeypatch):
-    respx.post(ANILIST_OAUTH_TOKEN_URL).mock(
-        return_value=httpx.Response(200, json={"access_token": "token123"})
-    )
-    respx.post(ANILIST_GRAPHQL_URL).mock(
-        return_value=httpx.Response(
-            200, json={"data": {"Viewer": {"id": 99, "name": "Jacson"}}}
-        )
-    )
-
-    client = TestClient(app)
-
+def test_callback_exchange_code_and_redirects_to_deeplink(client, anilist_gateway):
     r1 = client.get("/auth/anilist/start", follow_redirects=False)
     assert r1.status_code == 302
     loc = r1.headers["location"]
@@ -53,73 +36,52 @@ def test_callback_exchange_code_and_redirects_to_deeplink(monkeypatch):
     assert r2.status_code == 302
     assert r2.headers["location"].startswith("nekotrack://auth?token=")
 
+    assert [call.method for call in anilist_gateway.calls] == [
+        "exchange_code_for_token",
+        "viewer",
+    ]
+    assert anilist_gateway.last_call.access_token == anilist_gateway.access_token
 
-@respx.mock
-def test_callback_returns_500_when_anilist_token_endpoint_fails(db_session):
-    from app.db.session import get_db
 
-    respx.post(ANILIST_OAUTH_TOKEN_URL).mock(
-        return_value=httpx.Response(401, json={"error": "invalid_grant"})
+def test_callback_returns_502_when_anilist_token_endpoint_fails(
+    client, anilist_gateway
+):
+    # AniList rejected the code (HTTP 401 → AnilistHttpError in the gateway).
+    anilist_gateway.exchange_error = AnilistHttpError(
+        "AniList answered 401 calling https://anilist.co/api/v2/oauth/token"
     )
-
-    def _override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass
-
-    app.dependency_overrides[get_db] = _override_get_db
-    client = TestClient(app, raise_server_exceptions=False)
 
     state = create_state()
     r = client.get(
         f"/auth/anilist/callback?code=bad&state={state}", follow_redirects=False
     )
-    assert r.status_code == 500
-    app.dependency_overrides.clear()
+
+    assert r.status_code == 502
+    assert r.json() == {
+        "detail": "AniList request failed",
+        "code": "UPSTREAM_ERROR",
+        "errors": [],
+    }
 
 
-@respx.mock
-def test_callback_returns_500_when_anilist_graphql_errors(db_session):
-    from app.db.session import get_db
-
-    respx.post(ANILIST_OAUTH_TOKEN_URL).mock(
-        return_value=httpx.Response(200, json={"access_token": "tok"})
+def test_callback_returns_502_when_anilist_viewer_is_unusable(
+    client, anilist_gateway
+):
+    # AniList answered 200 with GraphQL errors[] (AnilistResponseError).
+    anilist_gateway.viewer_error = AnilistResponseError(
+        "AniList GraphQL errors: [{'message': 'Not found'}]"
     )
-    respx.post(ANILIST_GRAPHQL_URL).mock(
-        return_value=httpx.Response(
-            200, json={"errors": [{"message": "Not found"}]}
-        )
-    )
-
-    def _override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass
-
-    app.dependency_overrides[get_db] = _override_get_db
-    client = TestClient(app, raise_server_exceptions=False)
 
     state = create_state()
     r = client.get(
         f"/auth/anilist/callback?code=abc&state={state}", follow_redirects=False
     )
-    assert r.status_code == 500
-    app.dependency_overrides.clear()
+
+    assert r.status_code == 502
+    assert r.json()["detail"] == "Invalid AniList response"
 
 
-@respx.mock
-def test_callback_rejects_replayed_state(client):
-    respx.post(ANILIST_OAUTH_TOKEN_URL).mock(
-        return_value=httpx.Response(200, json={"access_token": "token123"})
-    )
-    respx.post(ANILIST_GRAPHQL_URL).mock(
-        return_value=httpx.Response(
-            200, json={"data": {"Viewer": {"id": 99, "name": "Jacson"}}}
-        )
-    )
-
+def test_callback_rejects_replayed_state(client, anilist_gateway):
     state = create_state()
 
     r1 = client.get(
@@ -127,7 +89,12 @@ def test_callback_rejects_replayed_state(client):
     )
     assert r1.status_code == 302
 
+    calls_after_first_attempt = len(anilist_gateway.calls)
+
     r2 = client.get(
         f"/auth/anilist/callback?code=abc&state={state}", follow_redirects=False
     )
     assert r2.status_code == 400
+
+    # The replayed attempt never reaches AniList again.
+    assert len(anilist_gateway.calls) == calls_after_first_attempt

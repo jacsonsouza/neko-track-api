@@ -12,11 +12,7 @@ services:
     volumes:
       - neko_pgdata:/var/lib/postgresql
     healthcheck:
-<<<<<<< HEAD
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-neko} -d $${POSTGRES_DB:-neko_track}"]
-=======
-      test: ["CMD-SHELL", "pg_isready -U neko -d neko_track"]
->>>>>>> f3ff6fd (@jacsonsouza/fix/6/token-ownership (#7))
       interval: 5s
       timeout: 3s
       retries: 10

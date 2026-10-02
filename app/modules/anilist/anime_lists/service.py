@@ -1,5 +1,3 @@
-import httpx
-
 from app.modules.anilist.anime_lists.models.anilist_media_list_response import (
     AniListMediaListResponse,
 )
@@ -15,21 +13,19 @@ from app.modules.anilist.anime_lists.schemas import (
     AvailableToWatchResponse,
     UpdateAnimeListEntryRequest,
 )
-from app.modules.anilist.client import AnilistClient
 from app.modules.anilist.enums import MediaListStatus
+from app.modules.anilist.gateway import AnilistGateway
 
 
 async def anime_list_entries(
-    http: httpx.AsyncClient,
+    gateway: AnilistGateway,
     access_token: str,
     anilist_user_id: int,
     list_status: MediaListStatus,
     page: int = 1,
     per_page: int = 10,
 ) -> AnimeListResponse:
-    client = AnilistClient(http)
-
-    payload = await client.graphql(
+    data = await gateway.graphql(
         access_token=access_token,
         query=ANIME_LIST_ENTRIES,
         variables={
@@ -40,17 +36,15 @@ async def anime_list_entries(
         },
     )
 
-    return AnimeListResponse.from_graphql(payload)
+    return AnimeListResponse.from_graphql(data)
 
 
 async def available_to_watch_entries(
-    http: httpx.AsyncClient,
+    gateway: AnilistGateway,
     access_token: str,
     anilist_user_id: int,
 ) -> AvailableToWatchResponse:
-    client = AnilistClient(http)
-
-    payload = await client.graphql(
+    data = await gateway.graphql(
         access_token=access_token,
         query=AVAILABLE_TO_WATCH_ENTRIES,
         variables={
@@ -60,7 +54,7 @@ async def available_to_watch_entries(
 
     # Payload model keeps the "available to watch" domain rules; the router
     # answers with the public schema only.
-    response = AniListMediaListResponse.from_json(payload)
+    response = AniListMediaListResponse.from_json(data)
     entries = [
         AnimeListEntryItem.model_validate(entry.model_dump(by_alias=True))
         for entry in response.get_available_to_watch_entries()
@@ -70,24 +64,20 @@ async def available_to_watch_entries(
 
 
 async def update_anime_list_entry(
-    http: httpx.AsyncClient,
+    gateway: AnilistGateway,
     access_token: str,
     anime_id: int,
     data: UpdateAnimeListEntryRequest,
 ) -> AnimeListEntryResponse:
-    client = AnilistClient(http)
-
     variables = {
         "mediaId": anime_id,
         **data.to_anilist_variables(),
     }
 
-    payload = await client.graphql(
+    payload = await gateway.graphql(
         access_token=access_token,
         query=SAVE_ANIME_LIST_ENTRY,
         variables=variables,
     )
 
-    return AnimeListEntryResponse.model_validate(
-        payload["data"]["SaveMediaListEntry"]
-    )
+    return AnimeListEntryResponse.model_validate(payload["SaveMediaListEntry"])

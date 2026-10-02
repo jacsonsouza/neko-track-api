@@ -1,13 +1,10 @@
 import json
 from pathlib import Path
 
-import httpx
 import pytest
-import respx
 
 from app.core.crypto import encrypt_token
 from app.core.security import create_app_jwt
-from app.modules.anilist.client import ANILIST_GRAPHQL_URL
 from tests.factories.anilist_token_factory import AnilistTokenFactory
 
 
@@ -36,15 +33,15 @@ def auth_headers():
 
 
 @pytest.fixture
-def anilist_activities_payload():
-    return json.loads(Path("tests/fixtures/anilist_activities.json").read_text())
+def anilist_activities_data():
+    payload = json.loads(Path("tests/fixtures/anilist_activities.json").read_text())
+    return payload["data"]
 
 
-@respx.mock
-def test_should_get_user_activities(client, auth_headers, anilist_activities_payload):
-    respx.post(ANILIST_GRAPHQL_URL).mock(
-        return_value=httpx.Response(200, json=anilist_activities_payload)
-    )
+def test_should_get_user_activities(
+    client, auth_headers, anilist_activities_data, anilist_gateway
+):
+    anilist_gateway.data = anilist_activities_data
 
     response = client.get(
         "api/v1/me/activities",
@@ -57,3 +54,7 @@ def test_should_get_user_activities(client, auth_headers, anilist_activities_pay
     assert response.status_code == 200
     assert data["Page"]["pageInfo"]["currentPage"] == 1
     assert len(data["Page"]["activities"]) == 3
+
+    call = anilist_gateway.last_call
+    assert call.access_token == auth_headers["access_token"]
+    assert call.variables == {"userId": 123, "page": 1, "perPage": 10}

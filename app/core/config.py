@@ -9,6 +9,9 @@ class Settings(BaseSettings):
 
     anilist_client_id: str
     anilist_client_secret: str
+    # Timeout policy of the shared AniList client (see app/modules/anilist/gateway.py)
+    anilist_connect_timeout_seconds: float = 5.0
+    anilist_timeout_seconds: float = 15.0
 
     jwt_secret: str
     jwt_issuer: str = "neko-track"

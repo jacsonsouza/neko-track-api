@@ -28,8 +28,9 @@ class ActivityReplyResponse(BaseModel):
     user: ActivityReplyUser | None = None
 
     @classmethod
-    def from_graphql(cls, payload: dict, *, key: str) -> "ActivityReplyResponse":
-        node = (payload.get("data") or {}).get(key) or {}
+    def from_graphql(cls, data: dict, *, key: str) -> "ActivityReplyResponse":
+        """Build from the GraphQL ``data`` object (gateway already unwrapped)."""
+        node = data.get(key) or {}
         return cls.model_validate(node)
 
 
@@ -37,8 +38,8 @@ class ActivityRepliesResponse(BaseModel):
     replies: list[ActivityReplyResponse]
 
     @classmethod
-    def from_graphql(cls, payload: dict) -> "ActivityRepliesResponse":
-        page = (payload.get("data") or {}).get("Page") or {}
+    def from_graphql(cls, data: dict) -> "ActivityRepliesResponse":
+        page = data.get("Page") or {}
         return cls(replies=page.get("activityReplies") or [])
 
 
@@ -46,8 +47,8 @@ class DeleteReplyResponse(BaseModel):
     deleted: bool
 
     @classmethod
-    def from_graphql(cls, payload: dict) -> "DeleteReplyResponse":
-        node = (payload.get("data") or {}).get("DeleteActivityReply") or {}
+    def from_graphql(cls, data: dict) -> "DeleteReplyResponse":
+        node = data.get("DeleteActivityReply") or {}
         return cls.model_validate(node)
 
 
